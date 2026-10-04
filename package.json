@@ -11,11 +11,11 @@
     "appId": "com.tonoz.numarataj",
     "productName": "Numarataj Filo",
     "win": {
-      "target": "nsis"
+      "target": "portable",
+      "icon": "icon.ico"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+    "portable": {
+      "artifactName": "Numarataj_Filo_Portable.exe"
     }
   },
   "devDependencies": {
