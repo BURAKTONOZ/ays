@@ -16,7 +16,7 @@ function createWindow () {
     minHeight: 700,
     frame: false, 
     transparent: true, 
-    icon: path.join(__dirname, 'icon.ico'), // İKON BURADAN ÇEKİLİR
+    icon: path.join(__dirname, 'icon.ico'),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false 
