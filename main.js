@@ -16,7 +16,7 @@ function createWindow () {
     minHeight: 700,
     frame: false, 
     transparent: true, 
-    icon: path.join(__dirname, 'icon.ico'),
+    icon: path.join(__dirname, 'icon.ico'), // Uygulama ikonu
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false 
@@ -38,17 +38,15 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// Arayüzden gelen Küçült, Büyüt ve Kapatma komutları
 ipcMain.on('window-minimize', () => {
   if(mainWindow) mainWindow.minimize();
 });
 
 ipcMain.on('window-maximize', () => {
   if(mainWindow) {
-    if(mainWindow.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow.maximize();
-    }
+    if(mainWindow.isMaximized()) mainWindow.unmaximize();
+    else mainWindow.maximize();
   }
 });
 
