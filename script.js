@@ -7,7 +7,7 @@ const listen = (id, event, callback) => {
     if (el) el.addEventListener(event, callback);
 };
 
-// ELECTRON KÖPRÜSÜ (Özel Üst Bar Butonları)
+// ELECTRON KÖPRÜSÜ
 let ipcRenderer = null;
 if (window.require) {
     ipcRenderer = window.require('electron').ipcRenderer;
@@ -22,8 +22,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBCpOgcfBCp30-G2uxOYQ0NXRAiywOoTGY",
   authDomain: "numarataj-arac-filo.firebaseapp.com",
   databaseURL: "https://numarataj-arac-filo-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "numarataj-arac-filo",
-  storageBucket: "numarataj-arac-filo.firebasestorage.app"
+  projectId: "numarataj-arac-filo"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -35,23 +34,113 @@ let currentTab = 'dash';
 let initialLoadCount = 0;
 let systemVerified = false;
 
-// KÖK DİZİN
+/* ================= MODAL VE FORM AÇMA FONKSİYONLARI (GLOBAL YÜKLEME) ================= */
+// JS çökse bile butonların bunları görebilmesi için en tepeye eklendiler
+const overlay=document.getElementById('modal-overlay');
+let closeTimeout=null;
+window.openModal=function(id){
+ clearTimeout(closeTimeout);
+ document.querySelectorAll('.glass-modal').forEach(m=>{m.classList.add('hidden');m.classList.remove('flex','pop-in')});
+ if(overlay){ overlay.classList.remove('hidden'); overlay.classList.add('flex'); setTimeout(()=>overlay.classList.remove('opacity-0'),10); }
+ const m=document.getElementById(id); if(m){ m.classList.remove('hidden');m.classList.add('flex','pop-in'); }
+};
+window.closeModal=function(){
+ if(overlay) overlay.classList.add('opacity-0');
+ closeTimeout=setTimeout(()=>{
+  if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+  document.querySelectorAll('.glass-modal').forEach(m=>{m.classList.add('hidden');m.classList.remove('flex','pop-in')});
+ },300);
+};
+document.querySelectorAll('.modal-close').forEach(b=>b.addEventListener('click',window.closeModal));
+
+window.openVehicleForm = function(id=null){
+ document.getElementById('form-vehicle').reset();
+ const p=document.getElementById('vf-img-preview');p.classList.add('hidden');p.src='';
+ document.getElementById('vf-img-base64').value='';
+ document.getElementById('vf-img-label').innerHTML='<i class="fa-solid fa-camera text-3xl text-blue-400 block mb-2"></i>Fotoğrafı Değiştir';
+ const sb=document.getElementById('vf-status-box');
+ if(id){
+  document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-pen-to-square mr-3 text-blue-500"></i>Araç Düzenle';
+  const v=vehicleById(id);document.getElementById('vf-id').value=v.id;
+  ['plate','model','vin','year','color','fuel','km','ins','notes'].forEach(k=>{const el=document.getElementById('vf-'+k);if(el&&v[k]!==undefined)el.value=v[k]});
+  document.getElementById('vf-lastkm').value=v.lastMaintKm??'';document.getElementById('vf-lastdate').value=v.lastMaintDate||'';
+  if(v.image){document.getElementById('vf-img-base64').value=v.image;p.src=v.image;p.classList.remove('hidden');document.getElementById('vf-img-label').innerText='Değiştir'}
+  if(sb){ sb.classList.remove('hidden');const ss=document.getElementById('vf-status');ss.value=v.status==='maintenance'?'maintenance':'available';ss.disabled=v.status==='busy';}
+ }else{
+  document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-plus-circle mr-3 text-green-500"></i>Yeni Araç Ekle';
+  document.getElementById('vf-id').value='';
+  if(sb) sb.classList.add('hidden');
+ }
+ window.openModal('modal-vehicle-form');
+};
+
+window.openManualMissionForm=function(){
+ document.getElementById('form-manual-mission').reset();
+ document.getElementById('mm-user').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.users.filter(u=>!u.isDeleted).map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
+ document.getElementById('mm-vehicle').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.vehicles.filter(v=>!v.isDeleted).map(v=>`<option value="${esc(v.id)}">${esc(v.plate)} - ${esc(v.model)}</option>`).join('');
+ window.populatePurposes('mm-purpose');
+ window.openModal('modal-manual-mission');
+};
+
+window.updateManualVehicleKm=function(){
+ const v=vehicleById(document.getElementById('mm-vehicle').value);
+ document.getElementById('mm-start-km').value=v?v.km:'';
+};
+
+window.openUserForm=function(id=null){
+ document.getElementById('form-user').reset();const sb=document.getElementById('uf-status-box'),pin=document.getElementById('uf-pin');
+ if(id){
+  const u=userById(id);document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-pen mr-3 text-blue-400"></i>Personel Düzenle';document.getElementById('uf-id').value=u.id;
+  document.getElementById('uf-name').value=u.name;document.getElementById('uf-sicil').value=u.sicil||'';document.getElementById('uf-phone').value=u.phone||'';document.getElementById('uf-lic').value=u.licenseClass||'';
+  pin.required=false;
+  const ph=document.getElementById('uf-pin-hint'); if(ph) ph.innerText='(Değiştirmek istemiyorsanız boş bırakın)';
+  if(sb){ sb.classList.remove('hidden');document.getElementById('uf-active').value=u.isActive!==false?'true':'false';}
+ }else{
+  document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-plus mr-3 text-green-400"></i>Yeni Personel Ekle';document.getElementById('uf-id').value='';pin.required=true;
+  const ph=document.getElementById('uf-pin-hint'); if(ph) ph.innerText='* Zorunlu';
+  if(sb) sb.classList.add('hidden');
+ }
+ window.openModal('modal-user-form');
+};
+
+window.openRecordEdit=function(id){
+ const m=window.DB_DATA.missions.find(m=>m.id===id);if(!m)return;
+ const a=m.status==='active';
+ document.getElementById('rf-id').value=id;document.getElementById('rf-mode').value=a?'close':'edit';
+ document.getElementById('rf-title').innerHTML=a?'<i class="fa-solid fa-lock text-red-500 mr-2"></i>Görevi Yönetici Olarak Kapat':'<i class="fa-solid fa-pen mr-2"></i>Kilometre Düzeltme';
+ const info = document.getElementById('rf-info'); if(info) info.innerHTML=a?'Sahada takılı kalmış görevi sistemden <b>zorla</b> kapatır.':'Buradan yapılan düzeltme sadece bu kaydı etkiler.';
+ document.getElementById('rf-btn').innerText=a?'Görevi Kapat':'Kaydı Güncelle';
+ document.getElementById('rf-btn').className=a?'btn-3d btn-red w-full py-5 text-lg mt-2':'btn-3d btn-yellow w-full py-5 text-lg mt-2';
+ document.getElementById('rf-skm').value=m.startKm;document.getElementById('rf-ekm').value=a?'':m.endKm;
+ window.openModal('modal-record-edit');
+};
+
+window.customConfirm = function(msg) {
+    return new Promise(resolve => {
+        document.getElementById('confirm-msg').innerHTML = msg;
+        window.openModal('modal-confirm');
+        const btnYes = document.getElementById('btn-confirm-yes');
+        const btnNo = document.getElementById('btn-confirm-no');
+        const cleanup = () => { btnYes.onclick = null; btnNo.onclick = null; };
+        btnYes.onclick = () => { cleanup(); window.closeModal(); resolve(true); };
+        btnNo.onclick = () => { cleanup(); window.closeModal(); resolve(false); };
+    });
+};
+
+/* ================= FIREBASE VERİ OKUMA ================= */
 onValue(ref(db, 'adminPass'), snap => {
     window.DB_DATA.globalPass = snap.val() !== null ? String(snap.val()).trim() : "5555";
 });
-
 onValue(ref(db, 'isActive'), snap => {
     if (snap.val() === false || String(snap.val()) === "false") {
         showLockScreen('SİSTEM KAPATILDI', 'Yönetim paneli sistem yöneticisi tarafından geçici olarak erişime kapatılmıştır. Güvenlik kilidi aktiftir.');
     }
 });
-
 onValue(ref(db, 'version'), snap => {
     if (snap.val() && String(snap.val()) !== APP_VERSION) {
         showLockScreen('GÜNCELLEME GEREKLİ', `Kullandığınız program sürümü (${APP_VERSION}) çok eski. Lütfen güncel sürümü (${snap.val()}) kurunuz.`);
     }
 });
-
 onValue(ref(db, 'config'), snap => { 
   window.DB_DATA.config = snap.val() || {}; 
   applySub(); 
@@ -74,7 +163,6 @@ function checkInitialLoad() {
     }
 }
 
-// TABLO DİNLEYİCİLERİ
 onValue(ref(db, 'vehicles'), snap => { const d = snap.val()||{}; window.DB_DATA.vehicles = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 onValue(ref(db, 'users'), snap => { const d = snap.val()||{}; window.DB_DATA.users = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 onValue(ref(db, 'missions'), snap => { const d = snap.val()||{}; window.DB_DATA.missions = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
@@ -139,28 +227,6 @@ window.showToast=function(msg,type='info'){
  c.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},3800);
 };
 
-/* YENİ: TASARIMA UYGUN ONAY PENCERESİ FONKSİYONU */
-window.customConfirm = function(msg) {
-    return new Promise(resolve => {
-        document.getElementById('confirm-msg').innerHTML = msg;
-        window.openModal('modal-confirm');
-        
-        const btnYes = document.getElementById('btn-confirm-yes');
-        const btnNo = document.getElementById('btn-confirm-no');
-        const closeBtns = document.querySelectorAll('#modal-confirm .modal-close');
-        
-        const cleanup = () => {
-            btnYes.onclick = null;
-            btnNo.onclick = null;
-            closeBtns.forEach(b => b.onclick = null);
-        };
-
-        btnYes.onclick = () => { cleanup(); window.closeModal(); resolve(true); };
-        btnNo.onclick = () => { cleanup(); window.closeModal(); resolve(false); };
-        closeBtns.forEach(b => b.onclick = () => { cleanup(); window.closeModal(); resolve(false); });
-    });
-};
-
 function maintCfg(){const c=window.DB_DATA.config;return{interval:c.maintInterval||10000,warn:c.maintWarn||1000,months:c.maintMonths===undefined?12:c.maintMonths}}
 
 function updateClock(){
@@ -168,23 +234,6 @@ function updateClock(){
   document.querySelectorAll('.clock').forEach(e => { if(e) e.innerText=t; });
 }
 setInterval(updateClock,30000); updateClock();
-
-/* ================= MODAL MERKEZLEME ================= */
-const overlay=document.getElementById('modal-overlay');let closeTimeout=null;
-window.openModal=function(id){
- clearTimeout(closeTimeout);
- document.querySelectorAll('.glass-modal').forEach(m=>{m.classList.add('hidden');m.classList.remove('flex','pop-in')});
- if(overlay){ overlay.classList.remove('hidden'); overlay.classList.add('flex'); setTimeout(()=>overlay.classList.remove('opacity-0'),10); }
- const m=document.getElementById(id); if(m){ m.classList.remove('hidden');m.classList.add('flex','pop-in'); }
-};
-window.closeModal=function(){
- if(overlay) overlay.classList.add('opacity-0');
- closeTimeout=setTimeout(()=>{
-  if(overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-  document.querySelectorAll('.glass-modal').forEach(m=>{m.classList.add('hidden');m.classList.remove('flex','pop-in')});
- },300);
-};
-document.querySelectorAll('.modal-close').forEach(b=>b.addEventListener('click',window.closeModal));
 
 /* ================= TAB SİSTEMİ ================= */
 const TITLES={dash:'Dashboard',records:'Görev Kayıtları',fleet:'Filo Yönetimi',users:'Personel Yönetimi',settings:'Ayarlar'};
@@ -307,7 +356,7 @@ window.renderDashboard=function(){
  const act=missions.filter(m=>m.status==='active');
  act.forEach(m=>{
   const h=(now-new Date(m.startTime))/36e5;
-  if(h>8){const v=vehicles.find(v=>v.id===m.vehicleId);html+=alertCard('danger','fa-clock','Araç Dönmedi',Utils.plate(v?v.plate:'?','scale-[.7] origin-left'),`Süre: <b class="text-red-400">${Math.floor(h)} saat</b>`,'<button onclick="window.switchAdminTab(\'records\')" class="btn-3d btn-red w-full py-2.5 text-xs">Kayıtlardan Kapat</button>');n++}
+  if(h>8){const v=vehicles.find(v=>v.id===m.vehicleId);html+=alertCard('danger','fa-clock','Araç Dönmedi',Utils.plate(v?v.plate:'?','scale-[.7] origin-left'),`Süre: <b class="text-red-400">${Math.floor(h)} saat</b>`,`<button onclick="window.switchAdminTab('records')" class="btn-3d btn-red w-full py-2.5 text-xs">Kayıtlardan Kapat</button>`);n++}
  });
  missing.forEach(v=>{html+=alertCard('gray-400','fa-circle-info','Bakım Bilgisi Eksik',Utils.plate(v.plate,'scale-[.7] origin-left'),'Kayıt yok',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-gray w-full py-2.5 text-xs">Şimdi Gir</button>`);n++});
  
@@ -551,10 +600,13 @@ window.openUserForm=function(id=null){
  if(id){
   const u=userById(id);document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-pen mr-3 text-blue-400"></i>Personel Düzenle';document.getElementById('uf-id').value=u.id;
   document.getElementById('uf-name').value=u.name;document.getElementById('uf-sicil').value=u.sicil||'';document.getElementById('uf-phone').value=u.phone||'';document.getElementById('uf-lic').value=u.licenseClass||'';
-  pin.required=false;document.getElementById('uf-pin-hint').innerText='(Değiştirmek istemiyorsanız boş bırakın)';
-  sb.classList.remove('hidden');document.getElementById('uf-active').value=u.isActive!==false?'true':'false';
+  pin.required=false;
+  const ph=document.getElementById('uf-pin-hint'); if(ph) ph.innerText='(Değiştirmek istemiyorsanız boş bırakın)';
+  if(sb){ sb.classList.remove('hidden');document.getElementById('uf-active').value=u.isActive!==false?'true':'false';}
  }else{
-  document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-plus mr-3 text-green-400"></i>Yeni Personel Ekle';document.getElementById('uf-id').value='';pin.required=true;document.getElementById('uf-pin-hint').innerText='* Zorunlu';sb.classList.add('hidden');
+  document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-plus mr-3 text-green-400"></i>Yeni Personel Ekle';document.getElementById('uf-id').value='';pin.required=true;
+  const ph=document.getElementById('uf-pin-hint'); if(ph) ph.innerText='* Zorunlu';
+  if(sb) sb.classList.add('hidden');
  }
  window.openModal('modal-user-form');
 };
@@ -581,7 +633,7 @@ window.openRecordEdit=function(id){
  const a=m.status==='active';
  document.getElementById('rf-id').value=id;document.getElementById('rf-mode').value=a?'close':'edit';
  document.getElementById('rf-title').innerHTML=a?'<i class="fa-solid fa-lock text-red-500 mr-2"></i>Görevi Yönetici Olarak Kapat':'<i class="fa-solid fa-pen mr-2"></i>Kilometre Düzeltme';
- document.getElementById('rf-info').innerHTML=a?'Sahada takılı kalmış görevi sistemden <b>zorla</b> kapatır.':'Buradan yapılan düzeltme sadece bu kaydı etkiler.';
+ const info = document.getElementById('rf-info'); if(info) info.innerHTML=a?'Sahada takılı kalmış görevi sistemden <b>zorla</b> kapatır.':'Buradan yapılan düzeltme sadece bu kaydı etkiler.';
  document.getElementById('rf-btn').innerText=a?'Görevi Kapat':'Kaydı Güncelle';
  document.getElementById('rf-btn').className=a?'btn-3d btn-red w-full py-5 text-lg mt-2':'btn-3d btn-yellow w-full py-5 text-lg mt-2';
  document.getElementById('rf-skm').value=m.startKm;document.getElementById('rf-ekm').value=a?'':m.endKm;
