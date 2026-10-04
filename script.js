@@ -1,22 +1,20 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// DOM Hatasını Önleyen Güvenli Dinleyici Fonksiyonu
 const listen = (id, event, callback) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(event, callback);
     else console.warn(`Uyarı: HTML içinde '${id}' elementi bulunamadığı için atlandı.`);
 };
 
-// ELECTRON KÖPRÜSÜ
 let ipcRenderer = null;
 if (window.require) {
     ipcRenderer = window.require('electron').ipcRenderer;
     listen('win-min', 'click', () => ipcRenderer.send('window-minimize'));
+    listen('win-max', 'click', () => ipcRenderer.send('window-maximize'));
     listen('win-close', 'click', () => ipcRenderer.send('window-close'));
 }
 
-// UYGULAMA SÜRÜMÜ
 const APP_VERSION = "1.0.0";
 
 const firebaseConfig = {
@@ -36,12 +34,10 @@ let currentTab = 'dash';
 let initialLoadCount = 0;
 let systemVerified = false;
 
-/* === GÜVENLİK ŞALTERİ & SÜRÜM KONTROLÜ === */
 onValue(ref(db, 'config'), snap => { 
   const c = snap.val() || {}; 
   window.DB_DATA.config = c; 
 
-  // Esnek Kontrol: Sadece açıkça false ise kilitler. Yoksa veya hatalıysa açık kabul eder.
   if (c.isActive === false || String(c.isActive) === "false") {
       showLockScreen('SİSTEM KAPATILDI', 'Yönetim paneli sistem yöneticisi tarafından geçici olarak erişime kapatılmıştır. Güvenlik kilidi aktiftir.');
       return;
@@ -75,7 +71,6 @@ onValue(ref(db, 'config'), snap => {
   if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn&&currentTab==='settings') renderSettings(); 
 });
 
-/* VERİ DİNLEYİCİLERİ */
 function checkInitialLoad() { initialLoadCount++; }
 onValue(ref(db, 'vehicles'), snap => { const d = snap.val()||{}; window.DB_DATA.vehicles = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
 onValue(ref(db, 'users'), snap => { const d = snap.val()||{}; window.DB_DATA.users = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
@@ -101,13 +96,10 @@ function showLockScreen(title, message) {
   }
 }
 
-/* === YÖNETİCİ ŞİFRE GİRİŞİ === */
 listen('form-admin-login', 'submit', (e) => {
     e.preventDefault();
     const pw = document.getElementById('al-pw').value;
     const cfg = window.DB_DATA.config;
-    
-    // adminPass veritabanında yoksa bile hata vermemesi için
     const dbPass = cfg.adminPass ? String(cfg.adminPass) : "1234";
 
     if (pw === dbPass) {
@@ -124,7 +116,6 @@ listen('form-admin-login', 'submit', (e) => {
     }
 });
 
-/* ================= YARDIMCILAR ================= */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
 const hashPin=(p,salt)=>H('nmr|'+salt+'|'+p);
@@ -151,10 +142,15 @@ window.showToast=function(msg,type='info'){
 };
 
 function maintCfg(){const c=window.DB_DATA.config;return{interval:c.maintInterval||10000,warn:c.maintWarn||1000,months:c.maintMonths===undefined?12:c.maintMonths}}
-function updateClock(){const t=new Date().toLocaleString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});document.querySelectorAll('.clock').forEach(e=>if(e)e.innerText=t)}
+
+/* SÖZDİZİMİ HATASI DÜZELTİLDİ: Arrow function parantezleri eklendi */
+function updateClock(){
+  const t=new Date().toLocaleString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('.clock').forEach(e=>{if(e)e.innerText=t});
+}
+
 setInterval(updateClock,30000); updateClock();
 
-/* TAB, DASHBOARD ve RENDER FONKSİYONLARI */
 const TITLES={dash:'Dashboard',records:'Görev Kayıtları',fleet:'Filo Yönetimi',users:'Personel Yönetimi',settings:'Ayarlar'};
 window.switchAdminTab=function(tab){
  currentTab=tab;
@@ -384,7 +380,6 @@ window.renderSettings=function(){
 };
 function applySub(){const s=window.DB_DATA.config.sub||'Numarataj Şube Müdürlüğü';document.querySelectorAll('#hdr-org').forEach(e=>e.innerText=s)}
 
-/* ARAÇ FORMU KAYIT */
 listen('vf-img-file', 'change', e=>{
  const file=e.target.files[0];if(!file)return;const r=new FileReader();
  r.onload=ev=>{const img=new Image();img.onload=()=>{
@@ -485,7 +480,6 @@ window.printQR=function(){
  setTimeout(()=>window.print(),100);
 };
 
-/* MODAL FORMLAR (Bakım / Muayene) */
 listen('form-resolve-note', 'submit', async e=>{
  e.preventDefault(); const mid = document.getElementById('rn-mid').value;
  try { await update(ref(db, 'missions/'+mid), {noteResolved:true, resolveNote:document.getElementById('rn-text').value.trim(), resolveDate:new Date().toISOString()}); showToast('Rapor başarıyla kaydedildi.','success');closeModal(); } catch(err) { showToast('Bağlantı hatası.','error'); }
@@ -523,7 +517,6 @@ listen('form-insp', 'submit', async e=>{
  try { await update(ref(db), updates); showToast('Muayene tarihi başarıyla güncellendi.','success'); if(returnToDetail){const id=returnToDetail;returnToDetail=null;openVehicleDetail(id,'info')}else{closeModal()} } catch(err) { showToast('Hata.','error'); }
 });
 
-/* PERSONEL FORMU KAYIT */
 listen('form-user', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('uf-id').value,pin=document.getElementById('uf-pin').value;
@@ -535,7 +528,6 @@ listen('form-user', 'submit', async e=>{
  try { await set(ref(db, 'users/'+newId), {...(id?userById(id):{}), ...d}); showToast('Personel bilgileri kaydedildi.','success');closeModal(); } catch(err) { showToast('Kayıt hatası.','error'); }
 });
 
-/* ELLE KAYIT FORMU */
 listen('form-manual-mission', 'submit', async e=>{
  e.preventDefault();
  const uid=document.getElementById('mm-user').value,vid=document.getElementById('mm-vehicle').value;
@@ -554,7 +546,6 @@ listen('form-manual-mission', 'submit', async e=>{
  try { await update(ref(db), updates); showToast('Geçmiş kayıt başarıyla eklendi.','success'); closeModal(); } catch(err) { showToast('Veritabanına yazılamadı.','error'); }
 });
 
-/* KAYIT GÜNCELLE / ZORLA KAPAT FORMU */
 listen('form-record', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('rf-id').value,mode=document.getElementById('rf-mode').value;
@@ -580,7 +571,6 @@ listen('form-record', 'submit', async e=>{
  } catch (err) { showToast('Hata oluştu.','error'); }
 });
 
-/* AYARLAR FORMLARI */
 listen('form-maint-cfg', 'submit', async e=>{
  e.preventDefault(); try { await update(ref(db, 'config'), { maintInterval:parseInt(document.getElementById('cfg-interval').value), maintWarn:parseInt(document.getElementById('cfg-warn').value), maintMonths:parseInt(document.getElementById('cfg-months').value) }); showToast('Bakım periyot ayarları kaydedildi.','success'); } catch(e) { showToast('Kaydedilemedi.','error');}
 });
