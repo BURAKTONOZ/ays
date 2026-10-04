@@ -20,6 +20,8 @@ jobs:
         run: npm install
 
       - name: EXE Dosyasını Oluştur
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
       - name: EXE Dosyasını İndirmeye Hazırla
