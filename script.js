@@ -1,6 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, update, set } from "firebase/database";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 // Electron API Bağlantısı (preload.js üzerinden güvenli)
 if (window.electronAPI) {
     document.getElementById('win-min')?.addEventListener('click', window.electronAPI.minimize);
