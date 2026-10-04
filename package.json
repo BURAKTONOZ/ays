@@ -5,7 +5,7 @@
   "author": "Burak Tonoz",
   "main": "main.js",
   "scripts": {
-    "build-css": "npx tailwindcss -i ./src/input.css -o ./style.css --minify",
+    "build-css": "npx tailwindcss -i ./input.css -o ./style.css --minify",
     "start": "npm run build-css && electron .",
     "build": "npm run build-css && electron-builder --win"
   },
