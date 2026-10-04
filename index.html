@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1020">
+<title>Araç Teslim | Numarataj</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',success:'#22c55e',mission:'#38bdf8',warning:'#f59e0b',danger:'#ef4444'},fontFamily:{sans:['Inter','sans-serif']}}}}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap');
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background-color:#0a0f1f;background-image:radial-gradient(circle at 0 0,rgba(29,63,168,.30),transparent 45%),radial-gradient(circle at 100% 0,rgba(91,33,182,.28),transparent 45%);background-attachment:fixed;color:#e8ecf8;-webkit-tap-highlight-color:transparent;font-family:Inter,sans-serif}
+#app{height:100vh;height:100dvh}
+.glass{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);backdrop-filter:blur(16px);border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.bar{background:rgba(10,15,31,.88);border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:blur(20px)}
+input,select,textarea{background:rgba(0,0,0,.3)!important;border:1px solid rgba(147,160,196,.2)!important;color:#e8ecf8!important;border-radius:12px;font-size:16px!important}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.25)!important}
+option{background:#0f152e;color:#e8ecf8}
+input:read-only{background:rgba(0,0,0,.6)!important;color:#94a3b8!important;cursor:not-allowed}
+.btn-3d{font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:10px;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.btn-3d:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.btn-3d:active{transform:translateY(1px)}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8);border:1px solid #60a5fa}
+.btn-green{background:linear-gradient(135deg,#10b981,#047857);border:1px solid #34d399}
+.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);border:1px solid #f87171}
+.btn-yellow{background:linear-gradient(135deg,#f59e0b,#b45309);border:1px solid #fbbf24}
+.btn-gray{background:linear-gradient(135deg,#475569,#1e293b);border:1px solid #94a3b8}
+.tr-plate{display:inline-flex;border:3px solid #111827;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.tr-plate-blue{background:#0033A0;width:32px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px}
+.tr-plate-text{padding:4px 16px;color:#111827;font-weight:700;font-family:Oswald,sans-serif;font-size:1.3rem;letter-spacing:.1em;text-transform:uppercase;line-height:1;display:flex;align-items:center}
+.pop-in{animation:popIn .3s cubic-bezier(.175,.885,.32,1.275) forwards}
+@keyframes popIn{0%{opacity:0;transform:scale(.97) translateY(12px)}100%{opacity:1;transform:none}}
+.app-panel{position:absolute;top:0;left:0;width:100%;height:100%;transition:transform .4s,opacity .3s;opacity:0;pointer-events:none;overflow-y:auto}
+.app-panel.active{transform:none;opacity:1;pointer-events:auto;position:relative}
+.app-panel.slide-left{transform:translateX(-100%)}
+.app-panel.slide-right{transform:translateX(100%)}
+.pin-box{width:50px;height:60px;font-size:28px!important;text-align:center;font-weight:800;border-radius:12px;border:2px solid rgba(147,160,196,.3)!important}
+#toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{background:rgba(15,21,46,.95);border:1px solid rgba(255,255,255,.1);border-left:4px solid;padding:16px 20px;border-radius:12px;color:#fff;display:flex;align-items:center;font-size:.9rem;max-width:90vw;transition:all .3s}
+
+/* Splash Animasyonu */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 50px rgba(59,130,246,0.8); transform: scale(1.05); }
+}
+.animate-splash { animation: pulseGlow 2s infinite ease-in-out; }
+</style>
+</head>
+<body>
+<!-- SPLASH EKRANI -->
+<div id="splash-screen" class="fixed inset-0 z-50 bg-[#0a0f1f] flex flex-col items-center justify-center transition-opacity duration-500">
+  <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-700 rounded-2xl flex items-center justify-center animate-splash mb-6 border border-blue-400/30">
+    <i class="fa-solid fa-truck-fast text-4xl text-white"></i>
+  </div>
+  <h1 class="text-white font-extrabold tracking-widest text-lg">NUMARATAJ</h1>
+  <p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-1 mb-8">Araç Yönetim</p>
+  <div class="flex gap-1">
+    <div class="w-2 h-2 rounded-full bg-blue-500 animate-[bounce_1s_infinite_0ms]"></div>
+    <div class="w-2 h-2 rounded-full bg-blue-500 animate-[bounce_1s_infinite_200ms]"></div>
+    <div class="w-2 h-2 rounded-full bg-blue-500 animate-[bounce_1s_infinite_400ms]"></div>
+  </div>
+  <p class="text-textmuted text-xs mt-4" id="splash-text">Sistem Bağlantısı Kuruluyor...</p>
+</div>
+
+<div id="toast-container"></div>
+<div id="app">
+ <div id="view-driver" class="flex flex-col h-full">
+  <header class="bar shrink-0 px-4 py-3 flex items-center justify-between">
+   <div class="flex items-center gap-3">
+    <div class="bg-gradient-to-br from-blue-500 to-indigo-700 p-2.5 rounded-xl border border-blue-400/40"><i class="fa-solid fa-truck-fast text-xl text-white"></i></div>
+    <div><h1 class="text-base md:text-lg font-extrabold text-white leading-tight">ARAÇ YÖNETİM SİSTEMİ</h1><p class="hdr-sub text-[.62rem] text-blue-300 font-bold uppercase tracking-[.2em]" id="hdr-org">Numarataj Şube Müdürlüğü</p></div>
+   </div>
+   <div class="flex items-center gap-2">
+    <span class="flex items-center text-[10px] px-2.5 py-1.5 rounded-lg whitespace-nowrap bg-green-400/15 border border-green-400/40 text-green-300" id="conn-status">
+     <span class="w-2 h-2 rounded-full mr-1.5 bg-green-400 animate-pulse"></span><span class="uppercase font-bold">Canlı</span>
+    </span>
+   </div>
+  </header>
+  
+  <div class="flex-1 min-h-0 p-3 md:p-6 flex justify-center items-center">
+   <div class="relative w-full max-w-md h-full max-h-[760px] overflow-hidden glass rounded-3xl">
+    <div class="bg-black/40 p-4 border-b border-white/10 flex justify-between items-center relative z-10">
+     <div class="flex items-center gap-2"><i class="fa-solid fa-car-side text-primary"></i><span class="font-bold text-sm">Numarataj Filo</span></div>
+     <button onclick="resetWizard()" id="app-btn-cancel" class="hidden text-xs font-bold text-red-400 bg-red-400/10 px-3 py-1.5 rounded-lg">İptal <i class="fa-solid fa-rotate-left ml-1"></i></button>
+    </div>
+    <div class="relative w-full h-[calc(100%-58px)] overflow-hidden">
+     
+     <!-- ADIM 1: ARAÇ SEÇİMİ -->
+     <div id="app-step-1" class="app-panel active flex flex-col p-6">
+      <div class="text-center mt-1 mb-5">
+       <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 text-blue-400 mb-3"><i class="fa-solid fa-qrcode text-4xl"></i></div>
+       <h2 class="text-xl font-bold text-white mb-1">Aracı Teslim Alın</h2>
+       <p class="text-sm text-textmuted">Listeden aracı seçin veya kameranızla QR kodu okutun.</p>
+      </div>
+      <div class="space-y-4 flex-1">
+       <select id="app-vehicle-select" class="w-full p-4 font-bold text-center text-lg" onchange="loadVehicleInfo()"></select>
+       <div id="app-vehicle-info" class="hidden">
+        <div class="flex justify-center mb-4 mt-2" id="app-plate-display"></div>
+        <div id="app-vehicle-notes" class="bg-black/50 p-4 rounded-xl border border-white/10 space-y-3 text-sm"></div>
+       </div>
+      </div>
+      <button id="btn-next-step1" onclick="goToStep2()" class="w-full btn-3d btn-blue py-4 hidden mt-4">Aracı Seç ve İlerle <i class="fa-solid fa-arrow-right ml-2"></i></button>
+     </div>
+
+     <!-- ADIM 2: KULLANICI & PIN -->
+     <div id="app-step-2" class="app-panel slide-right flex flex-col p-6">
+      <div class="text-center mb-6">
+       <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-700/50 text-white mb-3"><i class="fa-solid fa-user-shield text-2xl"></i></div>
+       <h2 class="text-xl font-bold text-white mb-1">Personel Girişi</h2>
+       <p class="text-sm text-textmuted">İsminizi seçin ve 4 haneli PIN'inizi girin.</p>
+      </div>
+      <div class="space-y-8 flex-1">
+       <div class="bg-black/30 p-2 rounded-xl border border-white/5">
+        <label class="block text-[10px] font-bold text-primary uppercase ml-2 mb-1">Şoför Seçimi</label>
+        <select id="app-user-select" class="w-full p-3 text-white font-bold text-center text-lg" onchange="clearPins()"></select>
+       </div>
+       <div class="text-center">
+        <label class="block text-xs font-bold text-textmuted uppercase mb-4">Şifreniz (PIN)</label>
+        <div class="flex justify-center gap-3">
+         <input type="password" inputmode="numeric" autocomplete="off" maxlength="1" class="pin-box" id="pin1">
+         <input type="password" inputmode="numeric" autocomplete="off" maxlength="1" class="pin-box" id="pin2">
+         <input type="password" inputmode="numeric" autocomplete="off" maxlength="1" class="pin-box" id="pin3">
+         <input type="password" inputmode="numeric" autocomplete="off" maxlength="1" class="pin-box" id="pin4">
+        </div>
+       </div>
+      </div>
+     </div>
+
+     <!-- ADIM 3: GÖREV BAŞLAT / BİTİR / DEVRAL -->
+     <div id="app-step-3" class="app-panel slide-right flex flex-col p-6">
+      <div class="flex items-center gap-4 mb-5 bg-black/40 p-4 rounded-xl border border-white/5">
+       <div id="app-final-plate" class="scale-[.8] origin-left"></div>
+       <div><div class="text-[10px] text-textmuted uppercase font-bold">Aktif Kullanıcı</div><div id="app-final-user" class="font-bold text-primary"></div></div>
+      </div>
+      
+      <!-- BAŞLAT -->
+      <form id="app-form-start" class="hidden flex-col flex-1 space-y-4">
+       <div><label class="block text-xs font-bold text-textmuted uppercase mb-1">Çıkış Kilometresi</label>
+        <input type="number" id="app-start-km" class="w-full p-3 text-xl font-extrabold" readonly>
+        <p class="text-[10px] text-warning mt-1">Hata varsa aracı almadan önce yöneticiye bildirin.</p></div>
+       <div><label class="block text-xs font-bold text-textmuted uppercase mb-1">Görev Amacı</label><select id="app-purpose" class="w-full p-3.5"></select></div>
+       <div><label class="block text-xs font-bold text-textmuted uppercase mb-1">Güzergah</label><input type="text" id="app-dest" maxlength="120" class="w-full p-3.5" placeholder="Örn: Yenimahalle saha çalışması" required></div>
+       <div class="mt-auto pt-4"><button type="submit" id="btn-submit-start" class="w-full btn-3d btn-green py-5 text-lg"><i class="fa-solid fa-power-off mr-2"></i>Görevi Başlat</button></div>
+      </form>
+      
+      <!-- BİTİR -->
+      <form id="app-form-end" class="hidden flex-col flex-1 space-y-3">
+       <div class="bg-mission/10 border border-mission/30 p-3 rounded-lg"><p class="text-sm font-bold text-mission text-center"><i class="fa-solid fa-route mr-2"></i>Aktif Görevdesiniz</p></div>
+       <div><label class="block text-xs font-bold text-textmuted uppercase mb-1">Dönüş Kilometresi *</label><input type="number" id="app-end-km" min="0" class="w-full p-3 text-xl font-extrabold" placeholder="Aracın güncel KM'si" required></div>
+       <div><label class="block text-xs font-bold text-textmuted uppercase mb-1">Dönüş Saati</label><input type="datetime-local" id="app-end-time" class="w-full p-3" required></div>
+       <div class="bg-danger/10 p-3 rounded-xl border border-danger/30">
+        <label class="block text-xs font-bold text-red-300 uppercase mb-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Arıza / Eksik Bildir (Opsiyonel)</label>
+        <select id="app-end-note-sel" class="w-full p-3 mb-2">
+         <option value="">Sorunsuz teslim edildi</option>
+         <option>Silecek suyu bitti</option><option>Frenlerde sorun var / Ses yapıyor</option><option>Motordan ses geliyor</option>
+         <option>Lastik basıncı düşük / Patlak</option><option>Yakıt bitti / Azaldı</option><option>Kaporta hasarı / Çizik oluştu</option>
+         <option value="Diğer">Diğer (Lütfen alta yazın)</option>
+        </select>
+        <input type="text" id="app-end-note-txt" maxlength="150" class="w-full p-3 text-sm" placeholder="Ekstra belirtmek istediğiniz durum...">
+       </div>
+       <div class="mt-auto pt-2"><button type="submit" id="btn-submit-end" class="w-full btn-3d btn-red py-4 text-lg"><i class="fa-solid fa-flag-checkered mr-2"></i>Aracı Teslim Et</button></div>
+      </form>
+      
+      <!-- DEVRAL -->
+      <form id="app-form-takeover" class="hidden flex-col flex-1 space-y-3">
+       <div class="bg-warning/10 p-4 rounded-xl text-center border border-warning/30">
+        <i class="fa-solid fa-handshake-angle text-3xl text-warning mb-2"></i>
+        <h3 class="font-bold text-white mb-1">Araç Başkasında Görünüyor</h3>
+        <p class="text-xs text-warning/80">Araç şu an <b id="app-tk-olduser" class="text-white"></b> üzerinde. Önceki görev kapatılıp yeni göreviniz başlatılır.</p>
+       </div>
+       <div><label class="block text-[11px] font-bold text-textmuted uppercase mb-1">Aracın Şu Anki Kilometresi *</label><input type="number" id="app-tk-km" min="0" class="w-full p-3 font-extrabold text-xl text-center" required></div>
+       <div><label class="block text-[11px] font-bold text-textmuted uppercase mb-1">Görev Amacı</label><select id="app-tk-purpose" class="w-full p-3"></select></div>
+       <div><label class="block text-[11px] font-bold text-textmuted uppercase mb-1">Güzergah *</label><input type="text" id="app-tk-dest" maxlength="120" class="w-full p-3" required></div>
+       <div class="mt-auto pt-2 flex gap-3"><button type="button" onclick="resetWizard()" class="btn-3d btn-gray py-4 flex-1 text-sm">Vazgeç</button><button type="submit" id="btn-submit-takeover" class="btn-3d btn-yellow py-4 flex-1 text-sm"><i class="fa-solid fa-bolt mr-2"></i>Devral ve Başlat</button></div>
+      </form>
+
+      <!-- YÖNETİCİ TARAFINDAN KAPATILMIŞ BİLGİSİ -->
+      <div id="app-form-admin-closed" class="hidden flex-col flex-1 space-y-4">
+       <div class="bg-blue-500/10 p-5 rounded-2xl text-center border border-blue-500/30 my-auto">
+        <i class="fa-solid fa-circle-info text-4xl text-blue-400 mb-3"></i>
+        <h3 class="font-bold text-white mb-2 text-lg">Görev Kapatılmış</h3>
+        <p class="text-sm text-blue-200/80 mb-4">Bu aracın önceki teslim görevi <b id="app-ac-time" class="text-white"></b> itibarıyla <b>Yönetici</b> tarafından sistemden kapatılmıştır. Teslim işlemi yapmanıza gerek yoktur.</p>
+        <button type="button" onclick="showNewMissionForm()" class="btn-3d btn-blue w-full py-4 text-sm"><i class="fa-solid fa-play mr-2"></i>Anladım, Yeni Görev Başlat</button>
+       </div>
+       <button type="button" onclick="resetWizard()" class="btn-3d btn-gray w-full py-3 text-sm mt-auto">Ana Ekrana Dön</button>
+      </div>
+
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// === FIREBASE YAPILANDIRMASI ===
+const firebaseConfig = {
+  apiKey: "AIzaSyBCpOgcfBCp30-G2uxOYQ0NXRAiywOoTGY",
+  authDomain: "numarataj-arac-filo.firebaseapp.com",
+  databaseURL: "https://numarataj-arac-filo-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "numarataj-arac-filo",
+  storageBucket: "numarataj-arac-filo.firebasestorage.app",
+  messagingSenderId: "260599336139",
+  appId: "1:260599336139:web:a4c34c49e549025551df4e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* === GLOBAL VERİLER (Firebase'den Canlı Çekilecek) === */
+window.DB_DATA = {
+  vehicles: [],
+  users: [],
+  missions: [],
+  purposes: [],
+  config: {}
+};
+
+let loadedCount = 0;
+function checkDataLoad() {
+  loadedCount++;
+  if(loadedCount === 5) {
+    // Tüm veriler ilk kez yüklendiğinde Splash Ekranını Gizle
+    const splash = document.getElementById('splash-screen');
+    if(splash) {
+      splash.style.opacity = '0';
+      setTimeout(() => splash.remove(), 500);
+      initDriverView(); // Arayüzü başlat
+    } else {
+      // Zaten açıksa dropdown listelerini güncelle (Gerçek zamanlı tepki)
+      if(document.getElementById('app-step-1').classList.contains('active')) {
+        updateVehicleDropdown();
+        updateUserDropdown();
+      }
+    }
+  }
+}
+
+// 1. Araçları Dinle
+onValue(ref(db, 'vehicles'), (snapshot) => {
+  const data = snapshot.val() || {};
+  window.DB_DATA.vehicles = Object.keys(data).map(k => ({id: k, ...data[k]}));
+  if(loadedCount < 5) checkDataLoad(); else if(document.getElementById('app-step-1').classList.contains('active')) updateVehicleDropdown();
+});
+
+// 2. Kullanıcıları Dinle
+onValue(ref(db, 'users'), (snapshot) => {
+  const data = snapshot.val() || {};
+  window.DB_DATA.users = Object.keys(data).map(k => ({id: k, ...data[k]}));
+  if(loadedCount < 5) checkDataLoad(); else if(document.getElementById('app-step-1').classList.contains('active')) updateUserDropdown();
+});
+
+// 3. Görevleri Dinle
+onValue(ref(db, 'missions'), (snapshot) => {
+  const data = snapshot.val() || {};
+  window.DB_DATA.missions = Object.keys(data).map(k => ({id: k, ...data[k]}));
+  if(loadedCount < 5) checkDataLoad();
+});
+
+// 4. Görev Amaçlarını Dinle
+onValue(ref(db, 'purposes'), (snapshot) => {
+  const data = snapshot.val();
+  if(data) window.DB_DATA.purposes = data;
+  else window.DB_DATA.purposes = ["Saha Çalışması","Denetim","Tebligat","Evrak Dağıtımı","Araç Bakım","Özel Görev","Diğer"];
+  if(loadedCount < 5) checkDataLoad();
+});
+
+// 5. Kurum Ayarlarını Dinle (Sadece kurum adı vs çekmek için)
+onValue(ref(db, 'config'), (snapshot) => {
+  const data = snapshot.val() || {};
+  window.DB_DATA.config = data;
+  document.getElementById('hdr-org').innerText = data.sub || 'Numarataj Şube Müdürlüğü';
+  if(loadedCount < 5) checkDataLoad();
+});
+
+/* ================= YARDIMCILAR ================= */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
+const hashPin=(p,salt)=>H('nmr|'+salt+'|'+p);
+const num=v=>Number.isFinite(v)?v:0;
+const nf=n=>num(n).toLocaleString('tr-TR');
+const toLocalInput=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,16)};
+const fromLocalInput=v=>new Date(v).toISOString();
+const idGen=()=>'_'+Math.random().toString(36).slice(2,11)+Date.now().toString(36).slice(-4);
+const plateHtml=(p,c='scale-100 origin-left')=>`<div class="tr-plate ${c}"><div class="tr-plate-blue"><span class="text-white font-bold text-[9px] leading-none">TR</span></div><div class="tr-plate-text">${esc(p)}</div></div>`;
+
+window.showToast=function(msg,type='info'){
+ const c=document.getElementById('toast-container'),t=document.createElement('div');
+ let col='#3b82f6',ic='fa-info-circle';
+ if(type==='success'){col='#10b981';ic='fa-check-circle'}else if(type==='error'){col='#ef4444';ic='fa-triangle-exclamation'}else if(type==='warning'){col='#f59e0b';ic='fa-bell'}
+ t.className='toast pop-in';t.style.borderColor=col;
+ t.innerHTML=`<i class="fa-solid ${ic} text-2xl mr-4" style="color:${col}"></i><span>${esc(msg)}</span>`;
+ c.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},3800);
+};
+
+const vehicleById=id=>window.DB_DATA.vehicles.find(v=>v.id===id);
+const userById=id=>window.DB_DATA.users.find(u=>u.id===id);
+const activeMissionOfVehicle=vid=>window.DB_DATA.missions.find(m=>m.vehicleId===vid&&m.status==='active');
+const activeMissionOfUser=uid=>window.DB_DATA.missions.find(m=>m.userId===uid&&m.status==='active');
+
+window.updateVehicleDropdown = function() {
+  const vSel = document.getElementById('app-vehicle-select');
+  const oldVal = vSel.value;
+  const vehicles = window.DB_DATA.vehicles.filter(v=>!v.isDeleted && (v.status==='available'||v.status==='busy'));
+  vSel.innerHTML = '<option value="">Listeden Seçin...</option>' + vehicles.map(v=>`<option value="${esc(v.id)}">${esc(v.plate)} - ${esc(v.model)}${v.status==='busy'?' (Görevde)':''}</option>`).join('');
+  if (oldVal && vehicles.find(v => v.id === oldVal)) vSel.value = oldVal;
+};
+
+window.updateUserDropdown = function() {
+  const uSel = document.getElementById('app-user-select');
+  const oldVal = uSel.value;
+  const last = localStorage.getItem('last_user');
+  const users = window.DB_DATA.users.filter(u=>u.isActive!==false&&!u.isDeleted);
+  uSel.innerHTML = '<option value="">Adınızı Seçin</option>' + users.map(u=>`<option value="${esc(u.id)}" ${u.id===last?'selected':''}>${esc(u.name)}</option>`).join('');
+  if (oldVal && users.find(u => u.id === oldVal)) uSel.value = oldVal;
+};
+
+function populatePurposes(id) {
+  const s = document.getElementById(id);
+  if(!s) return;
+  s.innerHTML = window.DB_DATA.purposes.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+}
+
+window.initDriverView = function() {
+ resetWizard();
+ updateVehicleDropdown();
+ updateUserDropdown();
+ populatePurposes('app-purpose');
+ populatePurposes('app-tk-purpose');
+ document.getElementById('btn-next-step1').classList.add('hidden');
+ document.getElementById('app-vehicle-info').classList.add('hidden');
+ 
+ const sv=new URLSearchParams(location.search).get('vid');
+ if(sv){
+  const v=window.DB_DATA.vehicles.find(v=>v.id===sv);
+  if(v&&(v.status==='available'||v.status==='busy')){
+    document.getElementById('app-vehicle-select').value=sv;
+    loadVehicleInfo();
+    showToast('Araç tanındı.','success');
+  } else showToast('Okutulan araç kullanılamaz durumda veya silinmiş.','error');
+  history.replaceState({},document.title,location.pathname);
+ }
+};
+
+window.loadVehicleInfo = function() {
+ const vid=document.getElementById('app-vehicle-select').value, box=document.getElementById('app-vehicle-info'), btn=document.getElementById('btn-next-step1');
+ if(!vid){box.classList.add('hidden');btn.classList.add('hidden');return}
+ const v=vehicleById(vid);if(!v)return;
+ document.getElementById('app-plate-display').innerHTML=plateHtml(v.plate,'scale-125 origin-center');
+ let h='';
+ if(v.notes)h+=`<div><strong class="text-warning block text-[10px] uppercase mb-1"><i class="fa-solid fa-bullhorn mr-1"></i>Yönetici Notu</strong><div class="bg-warning/10 p-3 rounded-lg border border-warning/20 whitespace-pre-wrap">${esc(v.notes)}</div></div>`;
+ const open=window.DB_DATA.missions.filter(m=>m.vehicleId===vid&&m.status==='completed'&&m.returnNote&&m.noteResolved===false);
+ if(open.length)h+=`<div><strong class="text-danger block text-[10px] uppercase mb-1"><i class="fa-solid fa-wrench mr-1"></i>Açık Arıza Bildirimleri (${open.length})</strong>${open.map(m=>`<div class="text-red-300 font-bold bg-danger/10 p-2.5 rounded-lg border border-danger/30 mb-1.5">${esc(m.returnNote)}</div>`).join('')}</div>`;
+ if(!h)h='<div class="text-success text-center font-bold"><i class="fa-solid fa-circle-check mr-2"></i>Araçta sorun görünmüyor.</div>';
+ document.getElementById('app-vehicle-notes').innerHTML=h;
+ box.classList.remove('hidden');btn.classList.remove('hidden');
+};
+
+window.goToStep2 = function() {
+ if(!document.getElementById('app-vehicle-select').value) return showToast('Lütfen araç seçin','warning');
+ document.getElementById('app-step-1').classList.remove('active');document.getElementById('app-step-1').classList.add('slide-left');
+ document.getElementById('app-step-2').classList.remove('slide-right');document.getElementById('app-step-2').classList.add('active');
+ document.getElementById('app-btn-cancel').classList.remove('hidden');
+ if(document.getElementById('app-user-select').value) setTimeout(()=>document.getElementById('pin1').focus(),400);
+};
+
+const pins=()=>[1,2,3,4].map(i=>document.getElementById('pin'+i));
+window.clearPins=function(){pins().forEach(p=>p.value='');pins()[0].focus()};
+pins().forEach((p,i)=>{
+ p.addEventListener('input',()=>{
+  p.value=p.value.replace(/\D/g,'').slice(-1);
+  if(p.value&&i<3)pins()[i+1].focus();
+  if(pins().every(x=>x.value.length===1))verifyPin();
+ });
+ p.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!p.value&&i>0){pins()[i-1].focus();pins()[i-1].value=''}});
+ p.addEventListener('paste',e=>{
+  const t=(e.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,4);if(!t)return;e.preventDefault();
+  t.split('').forEach((c,k)=>pins()[k].value=c);if(t.length===4)verifyPin();
+ });
+});
+
+const fails={};
+function verifyPin() {
+ const uid=document.getElementById('app-user-select').value;
+ if(!uid){showToast('Lütfen isminizi seçin.','error');return clearPins()}
+ const f=fails[uid]||(fails[uid]={n:0,until:0});
+ if(Date.now()<f.until){showToast('Çok fazla hatalı deneme. '+Math.ceil((f.until-Date.now())/1000)+' sn bekleyin.','error');return clearPins()}
+ const pin=pins().map(p=>p.value).join(''), user=userById(uid);
+ if(user && user.pinHash === hashPin(pin,user.id)){
+  f.n=0; if(navigator.vibrate) navigator.vibrate(50);
+  localStorage.setItem('last_user',uid);
+  if(!prepareStep3(uid)) return;
+  document.getElementById('app-step-2').classList.remove('active');document.getElementById('app-step-2').classList.add('slide-left');
+  document.getElementById('app-step-3').classList.remove('slide-right');document.getElementById('app-step-3').classList.add('active');
+ }else{
+  f.n++; if(f.n>=5){f.until=Date.now()+60000;f.n=0}
+  if(navigator.vibrate)navigator.vibrate([100,50,100]);
+  showToast('Şifre hatalı!','error');clearPins();
+ }
+}
+
+window.showNewMissionForm = function() {
+ document.getElementById('app-form-admin-closed').classList.remove('flex');
+ document.getElementById('app-form-admin-closed').classList.add('hidden');
+ const f=document.getElementById('app-form-start');
+ f.classList.remove('hidden');f.classList.add('flex');
+};
+
+window.prepareStep3 = function(uid) {
+ const vid=document.getElementById('app-vehicle-select').value, v=vehicleById(vid), u=userById(uid);
+ if(!v||!u) return false;
+ const mine=activeMissionOfUser(uid), act=activeMissionOfVehicle(vid);
+ 
+ if(mine && mine.vehicleId !== vid){
+  const ov=vehicleById(mine.vehicleId);
+  showToast('Üzerinizde başka bir araçta ('+(ov?ov.plate:'?')+') aktif görev var. Önce onu teslim edin.','error');clearPins();return false;
+ }
+ 
+ document.getElementById('app-final-plate').innerHTML=plateHtml(v.plate);
+ document.getElementById('app-final-user').innerText=u.name;
+ 
+ ['app-form-start','app-form-end','app-form-takeover','app-form-admin-closed'].forEach(id=>{
+    const f=document.getElementById(id);f.classList.add('hidden');f.classList.remove('flex');
+ });
+ const show=id=>{const f=document.getElementById(id);f.classList.remove('hidden');f.classList.add('flex');return f};
+ 
+ if(act && act.userId === uid){
+  const f=show('app-form-end');f.dataset.mid=act.id;
+  document.getElementById('app-end-time').value=toLocalInput(new Date());document.getElementById('app-end-km').value='';
+  document.getElementById('app-end-note-sel').value='';document.getElementById('app-end-note-txt').value='';
+ }else if(act){
+  const f=show('app-form-takeover');f.dataset.oldmid=act.id;
+  const ou=userById(act.userId);
+  document.getElementById('app-tk-olduser').innerText=ou?ou.name:'Bilinmiyor';
+  document.getElementById('app-tk-km').value=v.km;document.getElementById('app-tk-dest').value='';
+ }else{
+  // Yönetici tarafından zorla kapatıldı mı kontrolü
+  const userMissions = window.DB_DATA.missions.filter(m => m.vehicleId === vid && m.userId === uid);
+  const lastMission = userMissions.sort((a,b) => new Date(b.endTime) - new Date(a.endTime))[0];
+  
+  if (lastMission && lastMission.status === 'completed' && lastMission.closeNote === 'Yönetici tarafından kapatıldı') {
+   const hoursSinceClose = (new Date() - new Date(lastMission.endTime)) / 3600000;
+   if (hoursSinceClose < 12) {
+    show('app-form-admin-closed');
+    document.getElementById('app-ac-time').innerText = new Date(lastMission.endTime).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('app-start-km').value = v.km; document.getElementById('app-dest').value = '';
+    return true; 
+   }
+  }
+  show('app-form-start');
+  document.getElementById('app-start-km').value=v.km;document.getElementById('app-dest').value='';
+ }
+ return true;
+};
+
+window.resetWizard = function() {
+ ['app-step-3','app-step-2'].forEach(id=>{const e=document.getElementById(id);e.classList.remove('active','slide-left');e.classList.add('slide-right')});
+ const s1=document.getElementById('app-step-1');s1.classList.remove('slide-left','slide-right');s1.classList.add('active');
+ document.getElementById('app-btn-cancel').classList.add('hidden');pins().forEach(p=>p.value='');
+};
+
+// BUTON DURUMLARI İÇİN (İki kere basmayı önlemek için)
+function setBtnLoading(btnId, isLoading, text) {
+  const btn = document.getElementById(btnId);
+  if(isLoading) {
+    btn.disabled = true;
+    btn.dataset.org = btn.innerHTML;
+    btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Bekleyin...`;
+    btn.style.opacity = '0.7';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.org || text;
+    btn.style.opacity = '1';
+  }
+}
+
+// 1. GÖREV BAŞLAT (Firebase'e Yaz)
+document.getElementById('app-form-start').addEventListener('submit', async e => {
+ e.preventDefault();
+ const uid=document.getElementById('app-user-select').value, vid=document.getElementById('app-vehicle-select').value;
+ if(activeMissionOfUser(uid)||activeMissionOfVehicle(vid)) return showToast('Bu araç veya personel için zaten aktif görev var.','error');
+ 
+ const dest = document.getElementById('app-dest').value.trim();
+ if(!dest) return showToast('Güzergah girin.','error');
+
+ setBtnLoading('btn-submit-start', true);
+ const newId = idGen();
+ const m = {
+   id: newId, userId: uid, vehicleId: vid, 
+   startKm: parseInt(document.getElementById('app-start-km').value), 
+   startTime: new Date().toISOString(), destination: dest, 
+   purpose: document.getElementById('app-purpose').value, status: 'active'
+ };
+ 
+ const updates = {};
+ updates['/missions/' + newId] = m;
+ updates['/vehicles/' + vid + '/status'] = 'busy';
+
+ try {
+   await update(ref(db), updates);
+   showToast('Görev başladı! İyi sürüşler.','success');
+   resetWizard();
+ } catch (err) {
+   showToast('Bağlantı hatası. İşlem yapılamadı.','error');
+ } finally {
+   setBtnLoading('btn-submit-start', false, 'Görevi Başlat');
+ }
+});
+
+// 2. GÖREV BİTİR (Firebase'e Yaz)
+document.getElementById('app-form-end').addEventListener('submit', async e => {
+ e.preventDefault();
+ const mid = e.target.dataset.mid;
+ const mx = window.DB_DATA.missions.find(m => m.id === mid);
+ if(!mx) return showToast('Görev bulunamadı.','error');
+ 
+ const ekm=parseInt(document.getElementById('app-end-km').value), endIso=fromLocalInput(document.getElementById('app-end-time').value);
+ const sel=document.getElementById('app-end-note-sel').value, txt=document.getElementById('app-end-note-txt').value.trim();
+ 
+ if(isNaN(ekm)||ekm<mx.startKm) return showToast('Dönüş KM çıkış KM\'den küçük olamaz!','error');
+ if(new Date(endIso)<new Date(mx.startTime)) return showToast('Dönüş saati çıkış saatinden önce olamaz.','error');
+ if(new Date(endIso)>Date.now()+5*60000) return showToast('Dönüş saati gelecekte olamaz.','error');
+ if(sel==='Diğer'&&!txt) return showToast('"Diğer" seçtiniz, lütfen açıklama yazın.','error');
+ if(ekm-mx.startKm>1500&&!confirm('Bu görevde '+nf(ekm-mx.startKm)+' km yapılmış görünüyor. Doğru mu?')) return;
+ 
+ let note=''; if(sel&&sel!=='Diğer') note=sel; if(txt) note+=(note?' - ':'')+txt;
+ 
+ setBtnLoading('btn-submit-end', true);
+ 
+ const updates = {};
+ updates['/missions/' + mid + '/endKm'] = ekm;
+ updates['/missions/' + mid + '/endTime'] = endIso;
+ updates['/missions/' + mid + '/status'] = 'completed';
+ updates['/missions/' + mid + '/returnNote'] = note;
+ updates['/missions/' + mid + '/noteResolved'] = note ? false : true;
+ 
+ const v = window.DB_DATA.vehicles.find(x=>x.id===mx.vehicleId);
+ updates['/vehicles/' + mx.vehicleId + '/status'] = 'available';
+ if(v && ekm > v.km) {
+   updates['/vehicles/' + mx.vehicleId + '/km'] = ekm;
+ }
+
+ try {
+   await update(ref(db), updates);
+   showToast('Araç başarıyla teslim edildi.','success');
+   resetWizard();
+ } catch (err) {
+   showToast('Bağlantı hatası. İşlem yapılamadı.','error');
+ } finally {
+   setBtnLoading('btn-submit-end', false, 'Aracı Teslim Et');
+ }
+});
+
+// 3. DEVRAL (Firebase'e Yaz)
+document.getElementById('app-form-takeover').addEventListener('submit', async e => {
+ e.preventDefault();
+ const uid=document.getElementById('app-user-select').value, vid=document.getElementById('app-vehicle-select').value;
+ const oldId = e.target.dataset.oldmid;
+ const old = window.DB_DATA.missions.find(m => m.id === oldId);
+ if(!old) return showToast('Önceki görev bulunamadı.','error');
+ 
+ const v=vehicleById(vid), km=parseInt(document.getElementById('app-tk-km').value), dest=document.getElementById('app-tk-dest').value.trim();
+ if(isNaN(km)||km<Math.max(v.km, old.startKm)) return showToast('Girilen KM, aracın kayıtlı KM\'sinden küçük olamaz.','error');
+ if(!dest) return showToast('Güzergah girin.','error');
+ if(km-old.startKm>1500&&!confirm('Önceki göreve '+nf(km-old.startKm)+' km yazılacak. Doğru mu?')) return;
+ 
+ setBtnLoading('btn-submit-takeover', true);
+ 
+ const nowIso = new Date().toISOString();
+ const newId = idGen();
+ 
+ const updates = {};
+ // Eski görevi kapat
+ updates['/missions/' + oldId + '/endKm'] = km;
+ updates['/missions/' + oldId + '/endTime'] = nowIso;
+ updates['/missions/' + oldId + '/status'] = 'completed';
+ updates['/missions/' + oldId + '/returnNote'] = '';
+ updates['/missions/' + oldId + '/noteResolved'] = true;
+ updates['/missions/' + oldId + '/autoClosed'] = true;
+ updates['/missions/' + oldId + '/closeNote'] = 'Başka personel devraldığı için sistem tarafından kapatıldı';
+ 
+ // Yeni görev aç
+ updates['/missions/' + newId] = {
+   id: newId, userId: uid, vehicleId: vid, startKm: km, startTime: nowIso, 
+   destination: dest, purpose: document.getElementById('app-tk-purpose').value, status: 'active'
+ };
+ 
+ // Araç güncelle
+ updates['/vehicles/' + vid + '/km'] = km;
+ updates['/vehicles/' + vid + '/status'] = 'busy';
+
+ try {
+   await update(ref(db), updates);
+   showToast('Araç devralındı, görev başladı.','success');
+   resetWizard();
+ } catch (err) {
+   showToast('Bağlantı hatası. İşlem yapılamadı.','error');
+ } finally {
+   setBtnLoading('btn-submit-takeover', false, 'Devral ve Başlat');
+ }
+});
+</script>
+</body>
+</html>
