@@ -16,8 +16,9 @@ tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',su
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&display=swap');
-html, body { height: 100%; overflow: hidden; background-color: #0a0f1f; }
-.app-wrapper { background-color: #0a0f1f; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border-radius: 12px; height: 100vh; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: 'Inter', sans-serif; color: #e8ecf8; display: flex; flex-direction: column; }
+html, body { height: 100%; overflow: hidden; background-color: transparent; } /* Transparent for rounded corners */
+/* app-wrapper yuvarlak köşeleri kontrol eder */
+.app-wrapper { background-color: #0a0f1f; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border-radius: 20px; height: 100vh; border: 1px solid rgba(255,255,255,0.15); overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: 'Inter', sans-serif; color: #e8ecf8; display: flex; flex-direction: column; }
 .drag-area { -webkit-app-region: drag; user-select: none; }
 .no-drag { -webkit-app-region: no-drag; }
 .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(16px); border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.28); }
@@ -52,9 +53,8 @@ option { background: #0f152e; color: #e8ecf8; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
-/* SAĞ ALT KÖŞE BİLDİRİM AYARI */
 #toast-container { position: absolute; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column-reverse; gap: 10px; pointer-events: none; }
-.toast { background: rgba(15,21,46,0.95); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid; padding: 16px 20px; border-radius: 12px; color: #fff; display: flex; align-items: center; font-size: 0.9rem; max-width: 90vw; transition: all 0.3s; }
+.toast { background: rgba(15,21,46,0.95); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid; padding: 16px 20px; border-radius: 12px; color: #fff; display: flex; align-items: center; font-size: 0.9rem; max-width: 90vw; transition: all 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
 table { border-collapse: separate; border-spacing: 0; width: 100%; }
 th { padding: 14px 12px; font-size: 0.72rem; text-transform: uppercase; color: #93a0c4; font-weight: 700; background: #131b3a; }
 td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
@@ -73,27 +73,29 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 </head>
 <body>
 
-<div class="app-wrapper w-full h-full relative">
+<div class="app-wrapper relative">
 
- <!-- ÖZEL PENCERE ÇUBUĞU (TITLEBAR) -->
- <div class="h-12 bg-[#060a16]/95 w-full border-b border-white/10 flex justify-between items-center px-4 shrink-0 drag-area z-[200]">
-  <div class="flex items-center gap-3 no-drag cursor-default">
-   <img src="icon.ico" class="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" alt="Logo" onerror="this.style.display='none'">
-   <div class="flex items-baseline gap-2">
-     <span class="font-black text-white tracking-widest text-sm drop-shadow-md">AYS</span>
-     <span class="text-blue-400 font-bold text-xs uppercase tracking-wider">Araç Yönetim Sistemi</span>
-     <span class="text-gray-500 font-medium text-[10px] ml-2 px-2 border-l border-white/10 uppercase">Numarataj Şube Müdürlüğü</span>
+ <!-- İSTENİLEN KALIN, 2 SATIRLI, LOGOLU ÖZEL ÜST BAR -->
+ <div class="h-20 bg-[#040814]/95 w-full border-b border-white/10 flex justify-between items-center px-6 shrink-0 drag-area z-[200]">
+  <div class="flex items-center gap-4 no-drag cursor-default">
+   <img src="icon.ico" class="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]" alt="Logo" onerror="this.style.display='none'">
+   <div class="flex flex-col justify-center">
+     <div class="flex items-center gap-2">
+       <span class="font-black text-white tracking-widest text-lg drop-shadow-md">AYS</span>
+       <span class="text-blue-400 font-bold text-sm uppercase tracking-wider">Araç Yönetim Sistemi</span>
+     </div>
+     <span class="text-gray-400 font-medium text-[11px] uppercase tracking-[0.2em] mt-0.5">Numarataj Şube Müdürlüğü</span>
    </div>
   </div>
-  <div class="flex items-center gap-1 no-drag">
-   <button id="win-min" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><i class="fa-solid fa-minus"></i></button>
-   <button id="win-max" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><i class="fa-regular fa-window-maximize"></i></button>
-   <button id="win-close" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 rounded transition"><i class="fa-solid fa-xmark"></i></button>
+  <div class="flex items-center gap-2 no-drag">
+   <button id="win-min" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition"><i class="fa-solid fa-minus"></i></button>
+   <button id="win-max" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition"><i class="fa-regular fa-window-maximize"></i></button>
+   <button id="win-close" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 rounded-lg transition"><i class="fa-solid fa-xmark text-lg"></i></button>
   </div>
  </div>
 
- <!-- GÜVENLİK VE GÜNCELLEME UYARI EKRANI -->
- <div id="system-lock-screen" class="absolute inset-y-10 inset-x-0 z-[110] bg-[#0a0f1f]/95 backdrop-blur-md hidden flex-col items-center justify-center">
+ <!-- GÜVENLİK UYARISI -->
+ <div id="system-lock-screen" class="absolute inset-y-20 inset-x-0 z-[110] bg-[#0a0f1f]/95 backdrop-blur-md hidden flex-col items-center justify-center">
   <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]"></i>
   <h1 id="sl-title" class="text-3xl font-black text-white tracking-wider mb-2">SİSTEM KİLİTLİ</h1>
   <p id="sl-msg" class="text-gray-300 text-center max-w-md"></p>
@@ -101,7 +103,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 
  <!-- SPLASH EKRANI -->
- <div id="splash-screen" class="absolute inset-y-10 inset-x-0 z-[100] bg-[#0a0f1f] flex flex-col items-center justify-center transition-opacity duration-500">
+ <div id="splash-screen" class="absolute inset-y-20 inset-x-0 z-[100] bg-[#0a0f1f] flex flex-col items-center justify-center transition-opacity duration-500 rounded-b-[20px]">
   <div class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-3xl flex items-center justify-center animate-splash mb-8 border border-blue-400/30">
     <i class="fa-solid fa-shield-halved text-5xl text-white"></i>
   </div>
@@ -111,7 +113,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 
  <!-- LOGIN EKRANI -->
- <div id="admin-login-screen" class="absolute inset-y-10 inset-x-0 z-[90] bg-[#030612]/80 backdrop-blur-sm hidden items-center justify-center p-4">
+ <div id="admin-login-screen" class="absolute inset-y-20 inset-x-0 z-[90] bg-[#030612]/80 backdrop-blur-sm hidden items-center justify-center p-4 rounded-b-[20px]">
   <div class="glass-modal w-full max-w-sm flex flex-col pop-in border-blue-500/30 border-2">
    <div class="p-6 border-b border-white/10 flex flex-col items-center text-center">
     <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-3"><i class="fa-solid fa-lock text-3xl text-blue-400"></i></div>
@@ -131,7 +133,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  <div id="app" class="hidden flex-1 min-h-0 w-full relative">
   <div class="flex w-full h-full">
    
-   <aside class="side flex w-64 shrink-0 flex-col p-4 no-drag">
+   <aside class="side flex w-64 shrink-0 flex-col p-4 no-drag rounded-bl-[20px]">
     <div class="flex items-center gap-3 px-2 py-4 mb-4 border-b border-white/10">
      <div class="bg-gradient-to-br from-blue-500 to-indigo-700 p-3 rounded-xl border border-blue-400/40"><i class="fa-solid fa-shield-halved text-2xl text-white"></i></div>
      <div><div class="font-extrabold text-white leading-tight text-sm">FİLO YÖNETİM</div><div class="text-[.6rem] text-blue-300 font-bold uppercase tracking-[.15em] mt-1" id="hdr-org">Numarataj Şube</div></div>
@@ -161,7 +163,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      </div>
     </header>
 
-    <main id="admin-main" class="flex-1 min-h-0 w-full overflow-y-auto p-6 relative">
+    <main id="admin-main" class="flex-1 min-h-0 w-full overflow-y-auto p-6 relative rounded-br-[20px]">
      <!-- DASHBOARD -->
      <div id="admin-dash" class="space-y-6 w-full">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -213,12 +215,12 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 </div>
 
 <!-- ================= YÖNETİCİ MODALLARI ================= -->
-<!-- Overlay (Arkaplan Bulanıklığı) - Merkezleme düzeltildi -->
-<div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
+<div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 overflow-y-auto no-drag">
  
- <!-- YENİ: TASARIMA UYGUN ONAY PENCERESİ (CONFIRM YERİNE GEÇER) -->
+ <!-- ONAY PENCERESİ -->
  <div id="modal-confirm" class="glass-modal w-full max-w-sm hidden flex-col pop-in">
-  <div class="p-6 border-b border-white/10 flex flex-col items-center text-center">
+  <div class="p-6 border-b border-white/10 flex flex-col items-center text-center relative">
+   <button class="modal-close absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
    <i class="fa-solid fa-circle-question text-5xl text-yellow-500 mb-4 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]"></i>
    <h3 class="font-extrabold text-xl text-white">Emin misiniz?</h3>
   </div>
@@ -231,8 +233,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   </div>
  </div>
 
+ <!-- ARAÇ KARTI -->
  <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
-  <!-- PLAKA VE MODEL YERLEŞİMİ (Kayma Sorunu Çözüldü) -->
   <div class="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
     <div id="vd-plate-box" class="shrink-0 scale-110 origin-left"></div>
@@ -273,13 +275,11 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 
  <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
   <form id="form-vehicle" class="p-8 space-y-6 overflow-y-auto"><input type="hidden" id="vf-id">
-   <!-- EKSİK OLAN İMG KODLARI EKLENDİ -->
    <div class="bg-black/40 border-2 border-dashed border-white/20 rounded-2xl flex items-center justify-center relative overflow-hidden h-40 hover:border-blue-500/50 transition cursor-pointer">
      <img id="vf-img-preview" alt="" class="absolute inset-0 w-full h-full object-cover hidden opacity-70">
      <div class="z-10 bg-black/60 backdrop-blur-sm px-6 py-4 rounded-xl text-center"><i class="fa-solid fa-camera text-3xl text-blue-400 block mb-2"></i><span class="text-sm font-bold text-white" id="vf-img-label">Araç Fotoğrafı Yükle</span></div>
@@ -304,7 +304,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-user-form" class="glass-modal w-full max-w-md hidden flex-col">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 id="uf-title" class="text-xl font-extrabold text-white">Personel</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
@@ -320,7 +319,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-resolve-note" class="glass-modal w-full max-w-md hidden flex-col">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 class="text-xl font-extrabold text-white">Şikayet Giderme Raporu</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
@@ -329,7 +327,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-maint" class="glass-modal w-full max-w-md hidden flex-col">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 class="text-xl font-extrabold text-white">Bakım İşle</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
@@ -338,7 +335,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-insp" class="glass-modal w-full max-w-sm hidden flex-col">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 class="text-xl font-extrabold text-white">Muayene Yenile</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
@@ -347,7 +343,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-manual-mission" class="glass-modal w-full max-w-2xl hidden flex-col">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 class="text-xl font-extrabold text-white">Elle Geçmiş Kayıt Gir</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
@@ -356,12 +351,14 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col">
-  <!-- X BUTONU EKLENDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
       <h3 id="rf-title" class="text-xl font-extrabold text-white">Kayıt Düzenle</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
-  <form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode"><input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form>
+  <form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode">
+   <!-- JS çökmesini önleyen ID'ler geri eklendi -->
+   <p id="rf-info" class="text-xs text-textmuted mb-4 bg-black/30 p-3 rounded-lg leading-relaxed"></p>
+   <input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form>
  </div>
 
 </div>
@@ -376,6 +373,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   <p style="font-size:20px;font-weight:800;color:#1e3a8a;background:#eff6ff;padding:20px;border-radius:15px">Göreve başlamak için telefon kameranızı karekoda okutunuz.</p>
  </div>
 </div>
+
+<!-- SCRIPTS -->
 <script type="module" src="script.js"></script>
 </body>
 </html>
