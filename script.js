@@ -1,9 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+// Hata Önleyici Dinleyici (Sayfada form yoksa çökmeyi tamamen engeller)
 const listen = (id, event, callback) => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener(event, callback);
+    if (el) {
+        el.addEventListener(event, callback);
+    } else {
+        console.warn(`[GÜVENLİ ATLAYIŞ] '${id}' elementi HTML'de bulunamadı.`);
+    }
 };
 
 // ELECTRON KÖPRÜSÜ
@@ -100,7 +105,6 @@ function showLockScreen(title, message) {
 listen('form-admin-login', 'submit', (e) => {
     e.preventDefault();
     const pw = document.getElementById('al-pw').value.trim();
-    
     if (pw === window.DB_DATA.globalPass) {
         document.getElementById('admin-login-screen').classList.add('hidden');
         document.getElementById('admin-login-screen').classList.remove('flex');
@@ -130,9 +134,13 @@ const Utils={dt:s=>{if(!s)return'--';const d=new Date(s);if(isNaN(d))return'--';
 
 const vehicleById=id=>window.DB_DATA.vehicles.find(v=>v.id===id);
 const userById=id=>window.DB_DATA.users.find(u=>u.id===id);
+const activeMissionOfVehicle=vid=>window.DB_DATA.missions.find(m=>m.vehicleId===vid&&m.status==='active');
+const activeMissionOfUser=uid=>window.DB_DATA.missions.find(m=>m.userId===uid&&m.status==='active');
 
 window.showToast=function(msg,type='info'){
- const c=document.getElementById('toast-container'),t=document.createElement('div');
+ const c=document.getElementById('toast-container');
+ if(!c) return;
+ const t=document.createElement('div');
  let col='#3b82f6',ic='fa-info-circle';
  if(type==='success'){col='#10b981';ic='fa-check-circle'}else if(type==='error'){col='#ef4444';ic='fa-triangle-exclamation'}else if(type==='warning'){col='#f59e0b';ic='fa-bell'}
  t.className='toast pop-in';t.style.borderColor=col;
@@ -148,6 +156,24 @@ function updateClock(){
 }
 setInterval(updateClock,30000); updateClock();
 
+/* ================= MODAL SİSTEMİ ================= */
+const overlay=document.getElementById('modal-overlay');let closeTimeout=null;
+window.openModal=function(id){
+ clearTimeout(closeTimeout);
+ document.querySelectorAll('.glass-modal').forEach(m=>{m.classList.add('hidden');m.classList.remove('flex','pop-in')});
+ if(overlay){ overlay.classList.remove('hidden');setTimeout(()=>overlay.classList.remove('opacity-0'),10); }
+ const m=document.getElementById(id); if(m){ m.classList.remove('hidden');m.classList.add('flex','pop-in'); }
+};
+window.closeModal=function(){
+ if(overlay) overlay.classList.add('opacity-0');
+ closeTimeout=setTimeout(()=>{
+  if(overlay) overlay.classList.add('hidden');
+  document.querySelectorAll('.glass-modal').forEach(m=>{m.classList.add('hidden');m.classList.remove('flex','pop-in')});
+ },300);
+};
+document.querySelectorAll('.modal-close').forEach(b=>b.addEventListener('click',window.closeModal));
+
+/* ================= TAB SİSTEMİ ================= */
 const TITLES={dash:'Dashboard',records:'Görev Kayıtları',fleet:'Filo Yönetimi',users:'Personel Yönetimi',settings:'Ayarlar'};
 window.switchAdminTab=function(tab){
  currentTab=tab;
@@ -170,64 +196,7 @@ window.renderCurrent=function(){
 window.filterDashboard=function(type){const f=document.getElementById('fleet-filter');if(f)f.value=type;window.switchAdminTab('fleet')};
 window.populatePurposes=function(id){const s=document.getElementById(id);if(!s)return;s.innerHTML=window.DB_DATA.purposes.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')};
 
-window.openVehicleForm = function(id=null){
- document.getElementById('form-vehicle').reset();
- const p=document.getElementById('vf-img-preview');p.classList.add('hidden');p.src='';
- document.getElementById('vf-img-base64').value='';
- document.getElementById('vf-img-label').innerHTML='<i class="fa-solid fa-camera text-3xl text-blue-400 block mb-2"></i>Fotoğrafı Değiştir';
- const sb=document.getElementById('vf-status-box');
- if(id){
-  document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-pen-to-square mr-3 text-blue-500"></i>Araç Düzenle';
-  const v=vehicleById(id);document.getElementById('vf-id').value=v.id;
-  ['plate','model','vin','year','color','fuel','km','ins','notes'].forEach(k=>{const el=document.getElementById('vf-'+k);if(el&&v[k]!==undefined)el.value=v[k]});
-  document.getElementById('vf-lastkm').value=v.lastMaintKm??'';document.getElementById('vf-lastdate').value=v.lastMaintDate||'';
-  if(v.image){document.getElementById('vf-img-base64').value=v.image;p.src=v.image;p.classList.remove('hidden');document.getElementById('vf-img-label').innerText='Değiştir'}
-  sb.classList.remove('hidden');const ss=document.getElementById('vf-status');ss.value=v.status==='maintenance'?'maintenance':'available';ss.disabled=v.status==='busy';
- }else{
-  document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-plus-circle mr-3 text-green-500"></i>Yeni Araç Ekle';
-  document.getElementById('vf-id').value='';sb.classList.add('hidden');
- }
- window.openModal('modal-vehicle-form');
-};
-
-window.openManualMissionForm=function(){
- document.getElementById('form-manual-mission').reset();
- document.getElementById('mm-user').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.users.filter(u=>!u.isDeleted).map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
- document.getElementById('mm-vehicle').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.vehicles.filter(v=>!v.isDeleted).map(v=>`<option value="${esc(v.id)}">${esc(v.plate)} - ${esc(v.model)}</option>`).join('');
- window.populatePurposes('mm-purpose');
- window.openModal('modal-manual-mission');
-};
-
-window.updateManualVehicleKm=function(){
- const v=vehicleById(document.getElementById('mm-vehicle').value);
- document.getElementById('mm-start-km').value=v?v.km:'';
-};
-
-window.openUserForm=function(id=null){
- document.getElementById('form-user').reset();const sb=document.getElementById('uf-status-box'),pin=document.getElementById('uf-pin');
- if(id){
-  const u=userById(id);document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-pen mr-3 text-blue-400"></i>Personel Düzenle';document.getElementById('uf-id').value=u.id;
-  document.getElementById('uf-name').value=u.name;document.getElementById('uf-sicil').value=u.sicil||'';document.getElementById('uf-phone').value=u.phone||'';document.getElementById('uf-lic').value=u.licenseClass||'';
-  pin.required=false;document.getElementById('uf-pin-hint').innerText='(Değiştirmek istemiyorsanız boş bırakın)';
-  sb.classList.remove('hidden');document.getElementById('uf-active').value=u.isActive!==false?'true':'false';
- }else{
-  document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-plus mr-3 text-green-400"></i>Yeni Personel Ekle';document.getElementById('uf-id').value='';pin.required=true;document.getElementById('uf-pin-hint').innerText='* Zorunlu';sb.classList.add('hidden');
- }
- window.openModal('modal-user-form');
-};
-
-window.openRecordEdit=function(id){
- const m=window.DB_DATA.missions.find(m=>m.id===id);if(!m)return;
- const a=m.status==='active';
- document.getElementById('rf-id').value=id;document.getElementById('rf-mode').value=a?'close':'edit';
- document.getElementById('rf-title').innerHTML=a?'<i class="fa-solid fa-lock text-red-500 mr-2"></i>Görevi Yönetici Olarak Kapat':'<i class="fa-solid fa-pen mr-2"></i>Kilometre Düzeltme';
- document.getElementById('rf-info').innerHTML=a?'Sahada takılı kalmış görevi sistemden <b>zorla</b> kapatır.':'Buradan yapılan düzeltme sadece bu kaydı etkiler.';
- document.getElementById('rf-btn').innerText=a?'Görevi Kapat':'Kaydı Güncelle';
- document.getElementById('rf-btn').className=a?'btn-3d btn-red w-full py-5 text-lg mt-2':'btn-3d btn-yellow w-full py-5 text-lg mt-2';
- document.getElementById('rf-skm').value=m.startKm;document.getElementById('rf-ekm').value=a?'':m.endKm;
- window.openModal('modal-record-edit');
-};
-
+/* ================= DASHBOARD ================= */
 function maintStatus(v){
  const c=maintCfg();
  if(v.lastMaintKm===undefined||v.lastMaintKm===null||v.lastMaintKm==='')return{missing:true};
@@ -240,7 +209,7 @@ function maintStatus(v){
 }
 function maintSummaryHTML(v){
  const s=maintStatus(v);
- if(s.missing)return'<span class="text-gray-400"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Son bakım bilgisi yok.</span>';
+ if(s.missing)return'<span class="text-gray-400"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Son bakım bilgisi girilmemiş. Lütfen "Bakım İşle" butonunu kullanın.</span>';
  const col=s.state==='over'?'text-red-400':s.state==='soon'?'text-yellow-400':'text-green-400';
  return`<div class="grid sm:grid-cols-3 gap-5"><div><div class="text-[10px] text-yellow-500 uppercase font-bold tracking-widest mb-1">Kayıtlı Son Bakım</div><b class="text-white text-lg">${nf(v.lastMaintKm)} KM</b><div class="text-xs text-textmuted mt-1">${v.lastMaintDate?Utils.d(v.lastMaintDate+'T12:00:00'):'tarih yok'}</div></div><div><div class="text-[10px] text-yellow-500 uppercase font-bold tracking-widest mb-1">Gelecek Bakım</div><b class="text-white text-lg">${nf(s.nextKm)} KM</b></div><div><div class="text-[10px] text-yellow-500 uppercase font-bold tracking-widest mb-1">Kalan Durum</div><b class="text-lg ${col}">${s.remain<0?nf(-s.remain)+' KM gecikti':nf(s.remain)+' KM kaldı'}${s.daysLeft!==null?(s.daysLeft<0?' · Süre doldu':' · '+s.daysLeft+' gün'):''}</b></div></div>`;
 }
@@ -265,15 +234,17 @@ function lineChart(pts){
  const dots=xy.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#0f152e" stroke="#22c55e" stroke-width="3"/><text x="${p[0]}" y="${p[1]-12}" text-anchor="middle" fill="#fff" font-size="11" font-weight="800">${pts[i].v?nf(pts[i].v):''}</text><text x="${p[0]}" y="${Hh-6}" text-anchor="middle" fill="#93a0c4" font-size="11" font-weight="700">${esc(pts[i].l)}</text>`).join('');
  return`<svg viewBox="0 0 ${W} ${Hh}" class="w-full drop-shadow-md"><defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".4"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${grid}<polygon points="${area}" fill="url(#lg2)"/><polyline points="${line}" fill="none" stroke="#22c55e" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
 }
+
 function alertCard(color,icon,title,plateHtml,extra,btn){
  return`<div class="bg-${color}/10 border-l-4 border-${color} p-4 rounded-xl flex items-center justify-between gap-4 hover:bg-${color}/20 transition"><div class="flex-1"><div class="flex items-center gap-2 mb-2"><i class="fa-solid ${icon} text-${color} text-lg"></i><span class="font-extrabold text-sm text-${color} uppercase tracking-wider">${title}</span></div><div class="flex items-center gap-4">${plateHtml}<span class="text-sm font-bold text-gray-200">${extra}</span></div></div><div class="shrink-0 w-36">${btn||''}</div></div>`;
 }
 
 window.renderDashboard=function(){
- const vehicles = window.DB_DATA.vehicles.filter(v=>!v.isDeleted), missions = window.DB_DATA.missions, users = window.DB_DATA.users;
- const els = {
-     tot: document.getElementById('dash-tot-veh'), avl: document.getElementById('dash-avl-veh'), act: document.getElementById('dash-act-mis'), mnt: document.getElementById('dash-mnt-veh')
- };
+ const vehicles = window.DB_DATA.vehicles.filter(v=>!v.isDeleted);
+ const missions = window.DB_DATA.missions;
+ const users = window.DB_DATA.users;
+ 
+ const els = { tot: document.getElementById('dash-tot-veh'), avl: document.getElementById('dash-avl-veh'), act: document.getElementById('dash-act-mis'), mnt: document.getElementById('dash-mnt-veh') };
  if(els.tot) els.tot.innerText = vehicles.length; if(els.avl) els.avl.innerText = vehicles.filter(v=>v.status==='available').length;
  if(els.act) els.act.innerText = vehicles.filter(v=>v.status==='busy').length; if(els.mnt) els.mnt.innerText = vehicles.filter(v=>v.status==='maintenance').length;
  
@@ -307,18 +278,19 @@ window.renderDashboard=function(){
 
  let html='',n=0;
  missions.filter(m=>m.status==='completed'&&m.returnNote&&m.noteResolved===false).forEach(m=>{
-  const v=vehicles.find(v=>v.id===m.vehicleId);if(!v)return; const u=users.find(u=>u.id===m.userId)||{name:'?'};
+  const v=vehicles.find(v=>v.id===m.vehicleId);if(!v)return;
+  const u=users.find(u=>u.id===m.userId)||{name:'?'};
   html+=`<div class="bg-red-900/20 border-l-4 border-red-500 p-5 rounded-xl flex flex-col gap-3"><div class="flex justify-between items-center"><span class="badge badge-danger text-[10px] px-2 py-1"><i class="fa-solid fa-wrench mr-1"></i>Şoför Şikayeti</span><span class="text-xs text-red-300/60 font-bold">${Utils.d(m.endTime)}</span></div><div class="flex items-center gap-4">${Utils.plate(v.plate,'scale-[.65] origin-left -my-2')}<span class="text-sm font-bold text-white"><i class="fa-solid fa-user-circle mr-1 text-gray-400"></i>${esc(u.name)}</span></div><p class="text-sm text-red-200 bg-red-950/40 p-3 rounded-lg border border-red-500/20">"${esc(m.returnNote)}"</p><button onclick="window.openResolveModal('${m.id}')" class="btn-3d btn-green w-full py-2.5 text-xs"><i class="fa-solid fa-check mr-2"></i>Sorunu Giderildi Olarak İşaretle</button></div>`;n++;
  });
  const missing=[];
  vehicles.forEach(v=>{
   const s=maintStatus(v),pl=Utils.plate(v.plate,'scale-[.7] origin-left');
   if(s.missing){missing.push(v);}
-  else if(s.state==='over'){html+=alertCard('danger','fa-oil-can','Bakım Gecikti!',pl,'<span class="text-red-400 font-black">KM/Süre Geçti</span>',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs">Bakım İşle</button>`);n++}
-  else if(s.state==='soon'){html+=alertCard('warning','fa-oil-can','Bakım Yaklaştı',pl,`Kalan: <b class="text-white">${nf(s.remain)} KM</b>`,`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs">Bakım İşle</button>`);n++}
+  else if(s.state==='over'){html+=alertCard('danger','fa-oil-can','Bakım Gecikti!',pl,s.remain<0?`<span class="text-red-400 font-black">${nf(-s.remain)} KM GECMİŞ</span>`:'<span class="text-red-400 font-black">Süre Doldu</span>',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs shadow-lg">Bakım İşle</button>`);n++}
+  else if(s.state==='soon'){html+=alertCard('warning','fa-oil-can','Bakım Yaklaştı',pl,`Kalan: <b class="text-white">${nf(s.remain)} KM</b>`,`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs shadow-lg">Bakım İşle</button>`);n++}
   if(v.ins){
    const exp=new Date(v.ins+'T23:59:59'),days=Math.ceil((exp-now)/864e5);
-   const iBtn=`<button onclick="window.openInspForm('${v.id}')" class="btn-3d btn-green w-full py-2.5 text-xs">Yenilendi</button>`;
+   const iBtn=`<button onclick="window.openInspForm('${v.id}')" class="btn-3d btn-green w-full py-2.5 text-xs shadow-lg">Yenilendi</button>`;
    if(exp<now){html+=alertCard('danger','fa-calendar-xmark','Muayene Geçmiş!',pl,'<span class="text-red-400 font-black">Süresi Doldu</span>',iBtn);n++}
    else if(days<=15){html+=alertCard('warning','fa-calendar-day','Muayene Yaklaştı',pl,`Son: <b class="text-white">${days} Gün</b>`,iBtn);n++}
   }
@@ -326,12 +298,12 @@ window.renderDashboard=function(){
  const act=missions.filter(m=>m.status==='active');
  act.forEach(m=>{
   const h=(now-new Date(m.startTime))/36e5;
-  if(h>8){const v=vehicles.find(v=>v.id===m.vehicleId);html+=alertCard('danger','fa-clock','Araç Dönmedi',Utils.plate(v?v.plate:'?','scale-[.7] origin-left'),`Süre: <b class="text-red-400">${Math.floor(h)} saat</b>`,'<button onclick="window.switchAdminTab(\'records\')" class="btn-3d btn-red w-full py-2.5 text-xs">Kayıtlardan Kapat</button>');n++}
+  if(h>8){const v=vehicles.find(v=>v.id===m.vehicleId);html+=alertCard('danger','fa-clock','Araç Dönmedi',Utils.plate(v?v.plate:'?','scale-[.7] origin-left'),`Süre: <b class="text-red-400">${Math.floor(h)} saat</b>`,`<button onclick="window.switchAdminTab('records')" class="btn-3d btn-red w-full py-2.5 text-xs shadow-lg">Kayıtlardan Kapat</button>`);n++}
  });
- missing.forEach(v=>{html+=alertCard('gray-400','fa-circle-info','Bakım Bilgisi Eksik',Utils.plate(v.plate,'scale-[.7] origin-left'),'Kayıt yok',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-gray w-full py-2.5 text-xs">Şimdi Gir</button>`);n++});
+ missing.forEach(v=>{html+=alertCard('gray-400','fa-circle-info','Bakım Bilgisi Eksik',Utils.plate(v.plate,'scale-[.7] origin-left'),'Kayıt yok',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-gray w-full py-2.5 text-xs shadow-lg">Şimdi Gir</button>`);n++});
  
  const elAlerts = document.getElementById('dash-alerts');
- if(elAlerts) elAlerts.innerHTML=n?html:'<div class="text-center text-textmuted text-sm mt-20 flex flex-col items-center"><i class="fa-solid fa-shield-check text-6xl text-success/50 mb-4"></i>Tüm sistemler sorunsuz.</div>';
+ if(elAlerts) elAlerts.innerHTML=n?html:'<div class="text-center text-textmuted text-sm mt-20 flex flex-col items-center"><i class="fa-solid fa-shield-check text-6xl text-success/50 mb-4"></i>Tüm sistemler sorunsuz çalışıyor.</div>';
 
  const elLiveCount = document.getElementById('dash-live-count');
  if(elLiveCount) elLiveCount.innerText=act.length+' Araç';
@@ -421,11 +393,16 @@ window.renderSettings=function(){
  t('cfg-warn', String(mc.warn));
  t('cfg-months', String(mc.months));
 };
+
 function applySub(){const s=window.DB_DATA.config.sub||'Numarataj Şube Müdürlüğü';document.querySelectorAll('#hdr-org').forEach(e=>e.innerText=s)}
 
-window.openResolveModal=function(mid){document.getElementById('rn-mid').value=mid;document.getElementById('rn-text').value='';window.openModal('modal-resolve-note')};
+/* ================= MODAL KAYIT İŞLEMLERİ ================= */
+window.openResolveModal=function(mid){
+ document.getElementById('rn-mid').value=mid;
+ document.getElementById('rn-text').value='';
+ window.openModal('modal-resolve-note');
+};
 
-/* ARAÇ FORMU KAYIT */
 listen('vf-img-file', 'change', e=>{
  const file=e.target.files[0];if(!file)return;const r=new FileReader();
  r.onload=ev=>{const img=new Image();img.onload=()=>{
@@ -459,7 +436,7 @@ listen('form-vehicle', 'submit', async e=>{
    const mlId = idGen();
    await set(ref(db, 'maints/' + mlId), {id:mlId,vehicleId:newId,kind:'bakim',type:'Sisteme Giriş Öncesi Bakım',date:d.lastMaintDate||todayStr(),km:d.lastMaintKm,note:'Araç envantere kaydedilirken girilen referans değer',created:new Date().toISOString()});
   }
-  window.showToast(id?'Araç bilgileri başarıyla güncellendi.':'Yeni araç filoya eklendi.','success'); closeModal();
+  window.showToast(id?'Araç bilgileri başarıyla güncellendi.':'Yeni araç filoya eklendi.','success'); window.closeModal();
  } catch(err) { window.showToast('Veritabanı bağlantı hatası.','error'); }
 });
 
@@ -479,7 +456,7 @@ window.openVehicleDetail=function(id,tab){
  document.getElementById('vdi-btn-del').onclick=async ()=>{
   if(v.status==='busy')return window.showToast('Hata: Görevde olan araç silinemez. Önce görevi sonlandırın.','error');
   if(!confirm('DİKKAT: Bu aracı filodan kalıcı olarak kaldırmak istediğinize emin misiniz?'))return;
-  try { await update(ref(db, 'vehicles/'+id), {isDeleted: true}); closeModal(); window.showToast('Araç sistemden silindi.','success'); } catch(e) { window.showToast('Silinemedi','error'); }
+  try { await update(ref(db, 'vehicles/'+id), {isDeleted: true}); window.closeModal(); window.showToast('Araç sistemden silindi.','success'); } catch(e) { window.showToast('Silinemedi','error'); }
  };
  
  const logs=window.DB_DATA.maints.filter(m=>m.vehicleId===id).sort((a,b)=>(b.date+b.created).localeCompare(a.date+a.created));
@@ -528,18 +505,21 @@ window.printQR=function(){
  setTimeout(()=>window.print(),100);
 };
 
-/* MODAL FORMLAR (Bakım / Muayene) */
+/* MODAL FORMLAR */
 listen('form-resolve-note', 'submit', async e=>{
  e.preventDefault(); const mid = document.getElementById('rn-mid').value;
- try { await update(ref(db, 'missions/'+mid), {noteResolved:true, resolveNote:document.getElementById('rn-text').value.trim(), resolveDate:new Date().toISOString()}); window.showToast('Rapor başarıyla kaydedildi.','success');closeModal(); } catch(err) { window.showToast('Bağlantı hatası.','error'); }
+ try { await update(ref(db, 'missions/'+mid), {noteResolved:true, resolveNote:document.getElementById('rn-text').value.trim(), resolveDate:new Date().toISOString()}); window.showToast('Rapor başarıyla kaydedildi.','success');window.closeModal(); } catch(err) { window.showToast('Bağlantı hatası.','error'); }
 });
 
+let returnToDetail=null;
 window.openMaintForm=function(vid,fromDetail){
  const v=vehicleById(vid);if(!v)return; returnToDetail=fromDetail?vid:null; document.getElementById('form-maint').reset();
  document.getElementById('mt-vid').value=vid;document.getElementById('mt-plate').innerHTML=Utils.plate(v.plate, 'scale-[1.2]');
  document.getElementById('mt-date').value=todayStr();document.getElementById('mt-km').value=v.km; document.getElementById('mt-reset').checked=true; window.openModal('modal-maint');
 };
+
 listen('mt-type', 'change', e=>{document.getElementById('mt-reset').checked=['Yağ Bakımı','Periyodik Bakım'].includes(e.target.value)});
+
 listen('form-maint', 'submit', async e=>{
  e.preventDefault();
  const vid=document.getElementById('mt-vid').value,v=vehicleById(vid);if(!v)return;
@@ -550,13 +530,14 @@ listen('form-maint', 'submit', async e=>{
  const mId = idGen(); const updates = {};
  updates['/maints/'+mId] = {id:mId,vehicleId:vid,kind:'bakim',type:document.getElementById('mt-type').value,date,km,note:document.getElementById('mt-note').value.trim(),created:new Date().toISOString()};
  if(reset&&(v.lastMaintKm===undefined||v.lastMaintKm===null||km>=v.lastMaintKm)){ updates['/vehicles/'+vid+'/lastMaintKm'] = km; updates['/vehicles/'+vid+'/lastMaintDate'] = date; }
- try { await update(ref(db), updates); window.showToast('Bakım kaydı başarıyla oluşturuldu.','success'); if(returnToDetail){const id=returnToDetail;returnToDetail=null;window.openVehicleDetail(id,'maint')}else{closeModal()} } catch(err) { window.showToast('Hata.','error'); }
+ try { await update(ref(db), updates); window.showToast('Bakım kaydı başarıyla oluşturuldu.','success'); if(returnToDetail){const id=returnToDetail;returnToDetail=null;window.openVehicleDetail(id,'maint')}else{window.closeModal()} } catch(err) { window.showToast('Hata.','error'); }
 });
 
 window.openInspForm=function(vid,fromDetail){
  const v=vehicleById(vid);if(!v)return; returnToDetail=fromDetail?vid:null; document.getElementById('form-insp').reset();
  document.getElementById('mi-vid').value=vid;document.getElementById('mi-plate').innerHTML=Utils.plate(v.plate, 'scale-[1.2]'); window.openModal('modal-insp');
 };
+
 listen('form-insp', 'submit', async e=>{
  e.preventDefault(); const vid=document.getElementById('mi-vid').value,v=vehicleById(vid);if(!v)return;
  const nd=document.getElementById('mi-date').value, note=document.getElementById('mi-note').value.trim();
@@ -564,10 +545,9 @@ listen('form-insp', 'submit', async e=>{
  const mId=idGen(); const updates = {};
  updates['/maints/'+mId] = {id:mId,vehicleId:vid,kind:'muayene',type:'TÜVTÜRK Muayene Yenileme',date:todayStr(),km:v.km,note:'Yeni Bitiş: '+Utils.d(nd+'T12:00:00')+(note?' – '+note:''),created:new Date().toISOString()};
  updates['/vehicles/'+vid+'/ins'] = nd;
- try { await update(ref(db), updates); window.showToast('Muayene tarihi başarıyla güncellendi.','success'); if(returnToDetail){const id=returnToDetail;returnToDetail=null;window.openVehicleDetail(id,'info')}else{closeModal()} } catch(err) { window.showToast('Hata.','error'); }
+ try { await update(ref(db), updates); window.showToast('Muayene tarihi başarıyla güncellendi.','success'); if(returnToDetail){const id=returnToDetail;returnToDetail=null;window.openVehicleDetail(id,'info')}else{window.closeModal()} } catch(err) { window.showToast('Hata.','error'); }
 });
 
-/* PERSONEL FORMU KAYIT */
 listen('form-user', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('uf-id').value,pin=document.getElementById('uf-pin').value;
@@ -576,7 +556,7 @@ listen('form-user', 'submit', async e=>{
  const newId=id?id:idGen();
  if(id){ Object.assign(d, {isActive:document.getElementById('uf-active').value==='true', isDeleted:false}); if(pin) d.pinHash=hashPin(pin,id); }
  else{ d.id=newId; d.isActive=true; d.isDeleted=false; d.pinHash=hashPin(pin,newId); }
- try { await set(ref(db, 'users/'+newId), {...(id?userById(id):{}), ...d}); window.showToast('Personel bilgileri kaydedildi.','success');closeModal(); } catch(err) { window.showToast('Kayıt hatası.','error'); }
+ try { await set(ref(db, 'users/'+newId), {...(id?userById(id):{}), ...d}); window.showToast('Personel bilgileri kaydedildi.','success');window.closeModal(); } catch(err) { window.showToast('Kayıt hatası.','error'); }
 });
 
 window.deleteUser=async function(id){
@@ -585,7 +565,6 @@ window.deleteUser=async function(id){
  try { await update(ref(db, 'users/'+id), {isDeleted:true}); window.showToast('Personel silindi.','success'); window.renderCurrent(); } catch(e) { window.showToast('Silinemedi','error');}
 };
 
-/* ELLE KAYIT FORMU */
 listen('form-manual-mission', 'submit', async e=>{
  e.preventDefault();
  const uid=document.getElementById('mm-user').value,vid=document.getElementById('mm-vehicle').value;
@@ -601,10 +580,9 @@ listen('form-manual-mission', 'submit', async e=>{
  const note=document.getElementById('mm-note').value.trim(); const newId=idGen(); const updates = {};
  updates['/missions/' + newId] = {id:newId,userId:uid,vehicleId:vid,startKm:skm,endKm:ekm,startTime:st.toISOString(),endTime:en.toISOString(),destination:document.getElementById('mm-dest').value.trim(),purpose:document.getElementById('mm-purpose').value,status:'completed',returnNote:note,noteResolved:note?false:true,manual:true};
  const v = vehicleById(vid); if(v && ekm > v.km) updates['/vehicles/' + vid + '/km'] = ekm;
- try { await update(ref(db), updates); window.showToast('Geçmiş kayıt başarıyla eklendi.','success'); closeModal(); window.renderCurrent(); } catch(err) { window.showToast('Veritabanına yazılamadı.','error'); }
+ try { await update(ref(db), updates); window.showToast('Geçmiş kayıt başarıyla eklendi.','success'); window.closeModal(); window.renderCurrent(); } catch(err) { window.showToast('Veritabanına yazılamadı.','error'); }
 });
 
-/* KAYIT GÜNCELLE / ZORLA KAPAT FORMU */
 listen('form-record', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('rf-id').value,mode=document.getElementById('rf-mode').value;
@@ -626,7 +604,7 @@ listen('form-record', 'submit', async e=>{
    const maxK = Math.max(...allM.map(x=>x.endKm!==undefined?x.endKm:x.startKm), v.lastMaintKm||0);
    if(maxK !== v.km) await set(ref(db, '/vehicles/'+m.vehicleId+'/km'), maxK);
   }
-  window.showToast(mode==='close'?'Görev zorla kapatıldı.':'Kayıt başarıyla güncellendi.','success'); closeModal(); window.renderCurrent();
+  window.showToast(mode==='close'?'Görev zorla kapatıldı.':'Kayıt başarıyla güncellendi.','success'); window.closeModal(); window.renderCurrent();
  } catch (err) { window.showToast('Hata oluştu.','error'); }
 });
 
@@ -652,7 +630,6 @@ listen('form-admin-pw', 'submit', async e=>{
   e.preventDefault();
   const dbPass = window.DB_DATA.globalPass;
   const oldPw = document.getElementById('pw-old').value.trim();
-  
   if(oldPw !== dbPass) return window.showToast('Güvenlik Hatası: Mevcut şifrenizi yanlış girdiniz.','error');
   try {
    await set(ref(db, 'adminPass'), document.getElementById('pw-new').value.trim());
