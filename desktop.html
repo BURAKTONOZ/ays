@@ -7,12 +7,70 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="style.css">
-<script>tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',success:'#22c55e',mission:'#38bdf8',warning:'#f59e0b',danger:'#ef4444'}}}}</script>
+<script>tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',success:'#22c55e',mission:'#38bdf8',warning:'#f59e0b',danger:'#ef4444'},fontFamily:{sans:['Inter','sans-serif']}}}}</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&display=swap');
+html, body { height: 100%; overflow: hidden; background: transparent; }
+.app-wrapper { background-color: #0a0f1f; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border-radius: 16px; height: 100vh; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: 'Inter', sans-serif; color: #e8ecf8; display: flex; flex-direction: column; }
+.drag-area { -webkit-app-region: drag; user-select: none; }
+.no-drag { -webkit-app-region: no-drag; }
+.glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(16px); border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.28); }
+.bar { background: rgba(10,15,31,0.88); border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
+.side { background: linear-gradient(180deg, rgba(15,22,48,0.95), rgba(10,15,31,0.98)); border-right: 1px solid rgba(255,255,255,0.08); }
+.glass-modal { background: #0f152e; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
+input, select, textarea { background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(147,160,196,0.2) !important; color: #e8ecf8 !important; border-radius: 12px; font-size: 16px !important; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
+option { background: #0f152e; color: #e8ecf8; }
+.btn-3d { font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 10px; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.btn-3d:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.btn-3d:active { transform: translateY(1px); }
+.btn-blue { background: linear-gradient(135deg,#3b82f6,#1d4ed8); border: 1px solid #60a5fa; }
+.btn-green { background: linear-gradient(135deg,#10b981,#047857); border: 1px solid #34d399; }
+.btn-red { background: linear-gradient(135deg,#ef4444,#b91c1c); border: 1px solid #f87171; }
+.btn-yellow { background: linear-gradient(135deg,#f59e0b,#b45309); border: 1px solid #fbbf24; }
+.btn-gray { background: linear-gradient(135deg,#475569,#1e293b); border: 1px solid #94a3b8; }
+.tr-plate { display: inline-flex; border: 3px solid #111827; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+.tr-plate-blue { background: #0033A0; width: 32px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; }
+.tr-plate-text { padding: 4px 16px; color: #111827; font-weight: 700; font-family: Oswald, sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1; display: flex; align-items: center; }
+.pop-in { animation: popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+@keyframes popIn { 0% { opacity: 0; transform: scale(0.97) translateY(12px); } 100% { opacity: 1; transform: none; } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); transform: scale(1); } 50% { box-shadow: 0 0 50px rgba(59,130,246,0.8); transform: scale(1.05); } }
+.animate-splash { animation: pulseGlow 2s infinite ease-in-out; }
+.animate-mission { animation: pm 1.5s infinite; }
+@keyframes pm { 50% { opacity: 0.6; } }
+.nav-btn { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; color: #93a0c4; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; width: 100%; text-align: left; }
+.nav-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.nav-btn.active { background: linear-gradient(135deg,rgba(59,130,246,0.35),rgba(99,102,241,0.18)); color: #fff; box-shadow: inset 3px 0 0 #60a5fa; }
+.nav-btn i { width: 20px; text-align: center; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+#toast-container { position: absolute; top: 50px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: rgba(15,21,46,0.95); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid; padding: 16px 20px; border-radius: 12px; color: #fff; display: flex; align-items: center; font-size: 0.9rem; max-width: 90vw; transition: all 0.3s; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; }
+th { padding: 14px 12px; font-size: 0.72rem; text-transform: uppercase; color: #93a0c4; font-weight: 700; background: #131b3a; }
+td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+tbody tr:hover td { background: rgba(255,255,255,0.03); }
+.tbl-wrap { overflow: auto; }
+.tbl-wrap thead th { position: sticky; top: 0; z-index: 2; }
+.badge { padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; border: 1px solid transparent; display: inline-flex; align-items: center; }
+.badge-success { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.5); color: #4ade80; }
+.badge-mission { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.5); color: #7dd3fc; }
+.badge-warning { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.5); color: #fcd34d; }
+.badge-danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); color: #fca5a5; }
+.hbar { height: 9px; border-radius: 99px; background: rgba(0,0,0,0.35); overflow: hidden; }
+.hbar > div { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#2563eb,#60a5fa); transition: width 0.8s; }
+@media print{
+ html,body{overflow:visible;height:auto;background:#fff;}
+ body.printing .app-wrapper, body.printing #modal-overlay, body.printing #toast-container, body.printing #splash-screen {display:none!important}
+ body.printing #print-qr-wrapper{display:flex!important;justify-content:center;align-items:center;min-height:100vh;background:#fff}
+}
+</style>
 </head>
 <body>
 
-<div class="app-wrapper relative w-full h-full">
+<div class="app-wrapper w-full h-full relative">
 
  <!-- ÖZEL PENCERE ÇUBUĞU (TITLEBAR) -->
  <div class="h-10 bg-[#060a16] w-full border-b border-white/10 flex justify-between items-center px-4 shrink-0 drag-area z-[200]">
@@ -54,7 +112,7 @@
    <form id="form-admin-login" class="p-6 space-y-5 no-drag">
     <p class="text-xs text-textmuted text-center">Lütfen veritabanı yönetici şifresini girin.</p>
     <input type="password" id="al-pw" class="w-full p-4 text-center font-bold tracking-widest" placeholder="Yönetici Şifresi" required>
-    <button id="al-btn" type="submit" class="btn-3d btn-blue w-full py-4 text-lg">Giriş Yap</button>
+    <button type="submit" class="btn-3d btn-blue w-full py-4 text-lg">Giriş Yap</button>
    </form>
   </div>
  </div>
@@ -63,7 +121,7 @@
 
  <!-- YÖNETİCİ ANA EKRANI -->
  <div id="app" class="hidden flex-1 min-h-0 w-full relative">
-  <div id="view-admin" class="flex w-full h-full">
+  <div class="flex w-full h-full">
    
    <aside class="side flex w-64 shrink-0 flex-col p-4 no-drag">
     <div class="flex items-center gap-3 px-2 py-4 mb-4 border-b border-white/10">
@@ -150,9 +208,10 @@
 <div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  
  <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
+  <!-- PLAKA / MODEL HATASI BURADA DÜZELTİLDİ -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
    <div class="flex items-center gap-6">
-    <div class="w-40 flex items-center justify-start shrink-0"><div id="vd-plate-box" class="scale-[1.2] origin-left"></div></div>
+    <div class="w-40 flex shrink-0 justify-start"><div id="vd-plate-box" class="scale-[1.2] origin-left"></div></div>
     <div class="flex flex-col gap-1"><h3 id="vd-model" class="font-extrabold text-2xl text-white"></h3><div id="vd-status" class="mt-1"></div></div>
    </div>
    <button class="modal-close w-12 h-12 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-2xl text-textmuted"></i></button>
@@ -186,6 +245,7 @@
   </div>
  </div>
 
+ <!-- Diğer Modallar -->
  <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
   <form id="form-vehicle" class="p-8 space-y-6 overflow-y-auto"><input type="hidden" id="vf-id">
@@ -219,6 +279,17 @@
  <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode"><input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form></div>
 
 </div>
+</div>
+
+<!-- A4 ÇIKTI -->
+<div id="print-qr-wrapper">
+ <div style="font-family:Inter,sans-serif;text-align:center;border:8px solid #1e3a8a;padding:60px 40px;border-radius:30px;width:85%;background:#fff">
+  <h1 id="pr-org" style="font-size:30px;font-weight:900;color:#0f172a;margin:0"></h1>
+  <h2 id="pr-sub" style="font-size:22px;font-weight:700;color:#334155;margin:10px 0 30px"></h2>
+  <div id="print-plate-holder" style="display:flex;justify-content:center;margin:60px 0;transform:scale(1.8)"></div>
+  <div id="print-qrcode-holder" style="display:flex;justify-content:center;padding:20px;background:#fff;border:2px dashed #94a3b8;border-radius:20px;width:fit-content;margin:0 auto 40px"></div>
+  <p style="font-size:20px;font-weight:800;color:#1e3a8a;background:#eff6ff;padding:20px;border-radius:15px">Göreve başlamak için telefon kameranızı karekoda okutunuz.</p>
+ </div>
 </div>
 
 <script type="module" src="script.js"></script>
