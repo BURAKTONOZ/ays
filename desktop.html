@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yönetim Paneli | Numarataj Araç Filo</title>
+<title>AYS | Numarataj Araç Filo</title>
 
-<!-- EKSİK OLAN KÜTÜPHANELER VE TASARIM PAKETLERİ GERİ EKLENDİ -->
+<!-- Tasarım Kodları (CDN) -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -17,7 +17,7 @@ tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',su
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&display=swap');
 html, body { height: 100%; overflow: hidden; background-color: #0a0f1f; }
-.app-wrapper { background-color: #0a0f1f; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border-radius: 16px; height: 100vh; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: 'Inter', sans-serif; color: #e8ecf8; display: flex; flex-direction: column; }
+.app-wrapper { background-color: #0a0f1f; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border-radius: 12px; height: 100vh; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: 'Inter', sans-serif; color: #e8ecf8; display: flex; flex-direction: column; }
 .drag-area { -webkit-app-region: drag; user-select: none; }
 .no-drag { -webkit-app-region: no-drag; }
 .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(16px); border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.28); }
@@ -52,7 +52,8 @@ option { background: #0f152e; color: #e8ecf8; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
-#toast-container { position: absolute; top: 50px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+/* SAĞ ALT KÖŞE BİLDİRİM AYARI */
+#toast-container { position: absolute; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column-reverse; gap: 10px; pointer-events: none; }
 .toast { background: rgba(15,21,46,0.95); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid; padding: 16px 20px; border-radius: 12px; color: #fff; display: flex; align-items: center; font-size: 0.9rem; max-width: 90vw; transition: all 0.3s; }
 table { border-collapse: separate; border-spacing: 0; width: 100%; }
 th { padding: 14px 12px; font-size: 0.72rem; text-transform: uppercase; color: #93a0c4; font-weight: 700; background: #131b3a; }
@@ -75,14 +76,19 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 <div class="app-wrapper w-full h-full relative">
 
  <!-- ÖZEL PENCERE ÇUBUĞU (TITLEBAR) -->
- <div class="h-10 bg-[#060a16] w-full border-b border-white/10 flex justify-between items-center px-4 shrink-0 drag-area z-[200]">
-  <div class="flex items-center gap-3 text-gray-400 text-[10px] font-bold tracking-widest no-drag">
-   <i class="fa-solid fa-shield-halved text-blue-500"></i>NUMARATAJ FİLO MERKEZ
+ <div class="h-12 bg-[#060a16]/95 w-full border-b border-white/10 flex justify-between items-center px-4 shrink-0 drag-area z-[200]">
+  <div class="flex items-center gap-3 no-drag cursor-default">
+   <img src="icon.ico" class="w-6 h-6 object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" alt="Logo" onerror="this.style.display='none'">
+   <div class="flex items-baseline gap-2">
+     <span class="font-black text-white tracking-widest text-sm drop-shadow-md">AYS</span>
+     <span class="text-blue-400 font-bold text-xs uppercase tracking-wider">Araç Yönetim Sistemi</span>
+     <span class="text-gray-500 font-medium text-[10px] ml-2 px-2 border-l border-white/10 uppercase">Numarataj Şube Müdürlüğü</span>
+   </div>
   </div>
-  <div class="flex items-center gap-4 no-drag">
-   <button id="win-min" class="text-gray-400 hover:text-white transition" title="Küçült"><i class="fa-solid fa-minus"></i></button>
-   <button id="win-max" class="text-gray-400 hover:text-white transition" title="Tam Ekran"><i class="fa-regular fa-window-maximize"></i></button>
-   <button id="win-close" class="text-gray-400 hover:text-red-500 transition" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
+  <div class="flex items-center gap-1 no-drag">
+   <button id="win-min" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><i class="fa-solid fa-minus"></i></button>
+   <button id="win-max" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded transition"><i class="fa-regular fa-window-maximize"></i></button>
+   <button id="win-close" class="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 rounded transition"><i class="fa-solid fa-xmark"></i></button>
   </div>
  </div>
 
@@ -207,15 +213,35 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 </div>
 
 <!-- ================= YÖNETİCİ MODALLARI ================= -->
+<!-- Overlay (Arkaplan Bulanıklığı) - Merkezleme düzeltildi -->
 <div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  
- <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
-   <div class="flex items-center gap-6">
-    <div class="w-40 flex shrink-0 justify-start"><div id="vd-plate-box" class="scale-[1.2] origin-left"></div></div>
-    <div class="flex flex-col gap-1"><h3 id="vd-model" class="font-extrabold text-2xl text-white"></h3><div id="vd-status" class="mt-1"></div></div>
+ <!-- YENİ: TASARIMA UYGUN ONAY PENCERESİ (CONFIRM YERİNE GEÇER) -->
+ <div id="modal-confirm" class="glass-modal w-full max-w-sm hidden flex-col pop-in">
+  <div class="p-6 border-b border-white/10 flex flex-col items-center text-center">
+   <i class="fa-solid fa-circle-question text-5xl text-yellow-500 mb-4 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]"></i>
+   <h3 class="font-extrabold text-xl text-white">Emin misiniz?</h3>
+  </div>
+  <div class="p-6">
+   <p id="confirm-msg" class="text-sm text-gray-300 text-center mb-6 leading-relaxed"></p>
+   <div class="flex gap-3">
+    <button id="btn-confirm-no" class="btn-3d btn-gray flex-1 py-3 text-sm">İptal</button>
+    <button id="btn-confirm-yes" class="btn-3d btn-yellow flex-1 py-3 text-sm">Evet, Onaylıyorum</button>
    </div>
-   <button class="modal-close w-12 h-12 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-2xl text-textmuted"></i></button>
+  </div>
+ </div>
+
+ <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
+  <!-- PLAKA VE MODEL YERLEŞİMİ (Kayma Sorunu Çözüldü) -->
+  <div class="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
+   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+    <div id="vd-plate-box" class="shrink-0 scale-110 origin-left"></div>
+    <div class="flex flex-col gap-1 min-w-0">
+     <h3 id="vd-model" class="font-extrabold text-2xl text-white truncate break-words"></h3>
+     <div id="vd-status" class="mt-1 flex flex-wrap"></div>
+    </div>
+   </div>
+   <button class="modal-close w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition ml-4"><i class="fa-solid fa-xmark text-xl text-textmuted"></i></button>
   </div>
   <div class="flex px-6 pt-5 border-b border-white/10 gap-3 overflow-x-auto no-scrollbar shrink-0 bg-black/20">
    <button onclick="window.vdTab('info')" id="vd-tab-info" class="border-b-4 pb-4 px-5 text-sm font-extrabold whitespace-nowrap uppercase tracking-wider transition-colors">Genel Bakış</button>
@@ -247,8 +273,19 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 
  <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
   <form id="form-vehicle" class="p-8 space-y-6 overflow-y-auto"><input type="hidden" id="vf-id">
+   <!-- EKSİK OLAN İMG KODLARI EKLENDİ -->
+   <div class="bg-black/40 border-2 border-dashed border-white/20 rounded-2xl flex items-center justify-center relative overflow-hidden h-40 hover:border-blue-500/50 transition cursor-pointer">
+     <img id="vf-img-preview" alt="" class="absolute inset-0 w-full h-full object-cover hidden opacity-70">
+     <div class="z-10 bg-black/60 backdrop-blur-sm px-6 py-4 rounded-xl text-center"><i class="fa-solid fa-camera text-3xl text-blue-400 block mb-2"></i><span class="text-sm font-bold text-white" id="vf-img-label">Araç Fotoğrafı Yükle</span></div>
+     <input type="file" id="vf-img-file" accept="image/jpeg,image/png,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
+     <input type="hidden" id="vf-img-base64">
+   </div>
    <div class="grid sm:grid-cols-2 gap-5">
     <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" maxlength="12" class="w-full p-4 uppercase font-extrabold text-xl text-center" required></div>
     <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" maxlength="40" class="w-full p-4 font-bold" required></div>
@@ -267,25 +304,68 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-user-form" class="glass-modal w-full max-w-md hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="uf-title" class="text-xl font-extrabold text-white">Personel</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 id="uf-title" class="text-xl font-extrabold text-white">Personel</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
   <form id="form-user" class="p-8 space-y-5"><input type="hidden" id="uf-id">
    <input type="text" id="uf-name" class="w-full p-4 font-bold text-lg" placeholder="Ad Soyad" required>
    <div class="grid grid-cols-2 gap-5"><input type="text" id="uf-sicil" class="w-full p-4" placeholder="Sicil"><input type="text" id="uf-phone" class="w-full p-4" placeholder="Telefon"></div>
-   <input type="text" id="uf-lic" class="w-full p-4 text-center font-bold" placeholder="Ehliyet (Örn: B, E)">
+   <input type="text" id="uf-lic" class="w-full p-4 text-center font-bold" placeholder="Ehliyet Sınıfı (Örn: B, E)">
    <div class="bg-blue-900/20 p-2 rounded-xl border border-blue-500/20"><label class="block text-xs font-bold text-blue-300 text-center mt-1">4 Haneli PIN <span id="uf-pin-hint" class="text-red-400"></span></label><input type="password" id="uf-pin" maxlength="4" class="w-full p-3 text-center tracking-[1em] font-extrabold text-2xl bg-black/50 text-white" placeholder="••••"></div>
    <div id="uf-status-box" class="hidden"><select id="uf-active" class="w-full p-4 font-bold"><option value="true">Aktif</option><option value="false">Pasif</option></select></div>
    <button type="submit" class="btn-3d btn-green w-full py-5">Kaydet</button>
   </form>
  </div>
  
- <div id="modal-resolve-note" class="glass-modal w-full max-w-md hidden flex-col"><form id="form-resolve-note" class="p-8"><input type="hidden" id="rn-mid"><textarea id="rn-text" class="w-full p-4 mb-4" placeholder="Nasıl çözüldü?" required></textarea><button type="submit" class="btn-3d btn-green w-full py-4">Kapat</button></form></div>
- <div id="modal-maint" class="glass-modal w-full max-w-md hidden flex-col"><form id="form-maint" class="p-8"><input type="hidden" id="mt-vid"><div id="mt-plate" class="flex justify-center mb-4"></div><select id="mt-type" class="w-full p-4 mb-4"><option>Yağ Bakımı</option><option>Periyodik Bakım</option><option>Lastik</option><option>Fren</option><option>Genel/Diğer</option></select><input type="date" id="mt-date" class="w-full p-4 mb-4" required><input type="number" id="mt-km" class="w-full p-4 mb-4" required><textarea id="mt-note" class="w-full p-4 mb-4" placeholder="Not..."></textarea><label class="flex items-center gap-2 mb-4 text-white text-sm"><input type="checkbox" id="mt-reset" checked> Bakım sayacını sıfırla</label><button type="submit" class="btn-3d btn-yellow w-full py-4">Kaydet</button></form></div>
- <div id="modal-insp" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-insp" class="p-8"><input type="hidden" id="mi-vid"><div id="mi-plate" class="flex justify-center mb-4"></div><input type="date" id="mi-date" class="w-full p-4 mb-4" required><input type="text" id="mi-note" class="w-full p-4 mb-4" placeholder="Muayene Notu"><button type="submit" class="btn-3d btn-green w-full py-4">Kaydet</button></form></div>
- <div id="modal-manual-mission" class="glass-modal w-full max-w-2xl hidden flex-col"><form id="form-manual-mission" class="p-8"><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-user" class="p-4 w-full" required></select><select id="mm-vehicle" class="p-4 w-full" onchange="window.updateManualVehicleKm()" required></select></div><div class="grid grid-cols-2 gap-5 mb-5"><input type="datetime-local" id="mm-start-time" class="p-4 w-full" required><input type="datetime-local" id="mm-end-time" class="p-4 w-full" required><input type="number" id="mm-start-km" class="p-4 w-full" placeholder="Çıkış KM" required><input type="number" id="mm-end-km" class="p-4 w-full" placeholder="Dönüş KM" required></div><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-purpose" class="p-4 w-full" required></select><input type="text" id="mm-dest" class="p-4 w-full" placeholder="Güzergah" required></div><input type="text" id="mm-note" class="w-full p-4 mb-5" placeholder="Görev Notu / Şikayet"><button type="submit" class="btn-3d btn-yellow w-full py-5">Kaydı Tamamla</button></form></div>
- <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode"><input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form></div>
+ <div id="modal-resolve-note" class="glass-modal w-full max-w-md hidden flex-col">
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 class="text-xl font-extrabold text-white">Şikayet Giderme Raporu</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
+  <form id="form-resolve-note" class="p-8"><input type="hidden" id="rn-mid"><textarea id="rn-text" class="w-full p-4 mb-4" placeholder="Nasıl çözüldü?" required></textarea><button type="submit" class="btn-3d btn-green w-full py-4">Kapat</button></form>
+ </div>
+ 
+ <div id="modal-maint" class="glass-modal w-full max-w-md hidden flex-col">
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 class="text-xl font-extrabold text-white">Bakım İşle</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
+  <form id="form-maint" class="p-8"><input type="hidden" id="mt-vid"><div id="mt-plate" class="flex justify-center mb-4"></div><select id="mt-type" class="w-full p-4 mb-4"><option>Yağ Bakımı</option><option>Periyodik Bakım</option><option>Lastik</option><option>Fren</option><option>Genel/Diğer</option></select><input type="date" id="mt-date" class="w-full p-4 mb-4" required><input type="number" id="mt-km" class="w-full p-4 mb-4" required><textarea id="mt-note" class="w-full p-4 mb-4" placeholder="Not..."></textarea><label class="flex items-center gap-2 mb-4 text-white text-sm"><input type="checkbox" id="mt-reset" checked> Bakım sayacını sıfırla</label><button type="submit" class="btn-3d btn-yellow w-full py-4">Kaydet</button></form>
+ </div>
+ 
+ <div id="modal-insp" class="glass-modal w-full max-w-sm hidden flex-col">
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 class="text-xl font-extrabold text-white">Muayene Yenile</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
+  <form id="form-insp" class="p-8"><input type="hidden" id="mi-vid"><div id="mi-plate" class="flex justify-center mb-4"></div><input type="date" id="mi-date" class="w-full p-4 mb-4" required><input type="text" id="mi-note" class="w-full p-4 mb-4" placeholder="Muayene Notu"><button type="submit" class="btn-3d btn-green w-full py-4">Kaydet</button></form>
+ </div>
+ 
+ <div id="modal-manual-mission" class="glass-modal w-full max-w-2xl hidden flex-col">
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 class="text-xl font-extrabold text-white">Elle Geçmiş Kayıt Gir</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
+  <form id="form-manual-mission" class="p-8"><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-user" class="p-4 w-full" required></select><select id="mm-vehicle" class="p-4 w-full" onchange="window.updateManualVehicleKm()" required></select></div><div class="grid grid-cols-2 gap-5 mb-5"><input type="datetime-local" id="mm-start-time" class="p-4 w-full" required><input type="datetime-local" id="mm-end-time" class="p-4 w-full" required><input type="number" id="mm-start-km" class="p-4 w-full" placeholder="Çıkış KM" required><input type="number" id="mm-end-km" class="p-4 w-full" placeholder="Dönüş KM" required></div><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-purpose" class="p-4 w-full" required></select><input type="text" id="mm-dest" class="p-4 w-full" placeholder="Güzergah" required></div><input type="text" id="mm-note" class="w-full p-4 mb-5" placeholder="Görev Notu / Şikayet"><button type="submit" class="btn-3d btn-yellow w-full py-5">Kaydı Tamamla</button></form>
+ </div>
+ 
+ <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col">
+  <!-- X BUTONU EKLENDİ -->
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+      <h3 id="rf-title" class="text-xl font-extrabold text-white">Kayıt Düzenle</h3>
+      <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
+  </div>
+  <form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode"><input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form>
+ </div>
 
 </div>
-
+</div>
 <!-- A4 ÇIKTI -->
 <div id="print-qr-wrapper" class="hidden">
  <div style="font-family:Inter,sans-serif;text-align:center;border:8px solid #1e3a8a;padding:60px 40px;border-radius:30px;width:85%;background:#fff">
