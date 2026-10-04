@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body { height: 100%; overflow: hidden; background-color: #0a0f1f; }
+  input, select, textarea { @apply bg-black/30 border border-[#93a0c4]/20 text-[#e8ecf8] rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25; }
+  input:read-only { @apply bg-black/60 text-gray-400 cursor-not-allowed; }
+}
+
+@layer components {
+  .app-wrapper { @apply bg-[#0a0f1f] h-screen w-full flex flex-col relative overflow-hidden; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border: 1px solid rgba(255,255,255,0.1); }
+  .drag-area { -webkit-app-region: drag; user-select: none; }
+  .no-drag { -webkit-app-region: no-drag; }
+  .glass { @apply bg-white/5 border border-white/10 rounded-2xl shadow-lg backdrop-blur-md; }
+  .glass-modal { @apply bg-[#0f152e] border border-white/10 rounded-2xl shadow-2xl; }
+  .bar { @apply bg-[#0a0f1f]/90 border-b border-white/10 backdrop-blur-xl; }
+  .side { @apply bg-gradient-to-b from-[#0f1630] to-[#0a0f1f] border-r border-white/10 transition-all duration-300; }
+  .nav-btn { @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[#93a0c4] font-bold text-sm transition-all w-full text-left hover:bg-white/5 hover:text-white; }
+  .nav-btn.active { @apply bg-gradient-to-br from-primary/30 to-indigo-500/20 text-white shadow-[inset_3px_0_0_#60a5fa]; }
+  
+  /* Plaka Boyutlandırma Sınıfları */
+  .tr-plate { @apply inline-flex border-[3px] border-[#111827] rounded-lg overflow-hidden bg-white shadow-md; }
+  .tr-plate-blue { @apply bg-[#0033A0] flex items-end justify-center pb-0.5; }
+  .tr-plate-text { @apply text-[#111827] font-bold uppercase flex items-center font-[Oswald]; }
+  .plate-sm .tr-plate-blue { @apply w-4; } .plate-sm .tr-plate-blue span { @apply text-[6px]; } .plate-sm .tr-plate-text { @apply px-2 py-0.5 text-xs; }
+  .plate-md .tr-plate-blue { @apply w-6; } .plate-md .tr-plate-blue span { @apply text-[8px]; } .plate-md .tr-plate-text { @apply px-3 py-1 text-lg; }
+  .plate-lg .tr-plate-blue { @apply w-8; } .plate-lg .tr-plate-blue span { @apply text-[10px]; } .plate-lg .tr-plate-text { @apply px-4 py-1.5 text-2xl; }
+
+  /* Rozet ve İkonlar */
+  .badge { @apply px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border inline-flex items-center tracking-wider; }
+  .badge-gray { @apply bg-slate-400/15 border-slate-400/40 text-slate-300; }
+  .ch-title { @apply text-xs font-extrabold uppercase tracking-widest text-[#93a0c4] mb-3; }
+  .stat { @apply relative overflow-hidden cursor-pointer transition-transform hover:-translate-y-1; }
+  .ico { @apply absolute right-4 top-4 text-4xl opacity-20; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.animate-mission { animation: pulseMission 1.5s infinite; }
+@keyframes pulseMission { 50% { opacity: 0.6; } }
+@keyframes popIn { 0% { opacity: 0; transform: scale(0.97) translateY(12px); } 100% { opacity: 1; transform: none; } }
+.pop-in { animation: popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
