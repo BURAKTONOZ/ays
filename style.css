@@ -2,7 +2,6 @@
 
 html, body { height: 100%; overflow: hidden; background: transparent; }
 
-/* Pencere köşelerini yuvarlatma ve arka plan gradyanı */
 .app-wrapper {
   background-color: #0a0f1f;
   background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%);
@@ -18,17 +17,14 @@ html, body { height: 100%; overflow: hidden; background: transparent; }
   flex-direction: column;
 }
 
-/* Üst Kısım Sürükleme Alanı */
 .drag-area { -webkit-app-region: drag; user-select: none; }
 .no-drag { -webkit-app-region: no-drag; }
 
-/* Cam Efektleri */
 .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); backdrop-filter: blur(16px); border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.28); }
 .bar { background: rgba(10,15,31,0.88); border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
 .side { background: linear-gradient(180deg, rgba(15,22,48,0.95), rgba(10,15,31,0.98)); border-right: 1px solid rgba(255,255,255,0.08); }
 .glass-modal { background: #0f152e; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
 
-/* Giriş Kutuları ve Butonlar */
 input, select, textarea { background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(147,160,196,0.2) !important; color: #e8ecf8 !important; border-radius: 12px; font-size: 16px !important; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
 option { background: #0f152e; color: #e8ecf8; }
@@ -41,12 +37,10 @@ option { background: #0f152e; color: #e8ecf8; }
 .btn-red { background: linear-gradient(135deg,#ef4444,#b91c1c); border: 1px solid #f87171; }
 .btn-yellow { background: linear-gradient(135deg,#f59e0b,#b45309); border: 1px solid #fbbf24; }
 
-/* Plaka Tasarımı */
 .tr-plate { display: inline-flex; border: 3px solid #111827; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
 .tr-plate-blue { background: #0033A0; width: 32px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; }
 .tr-plate-text { padding: 4px 16px; color: #111827; font-weight: 700; font-family: Oswald, sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1; display: flex; align-items: center; }
 
-/* Animasyonlar ve Yardımcılar */
 .pop-in { animation: popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.97) translateY(12px); } 100% { opacity: 1; transform: none; } }
 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); transform: scale(1); } 50% { box-shadow: 0 0 50px rgba(59,130,246,0.8); transform: scale(1.05); } }
