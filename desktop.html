@@ -4,68 +4,88 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yönetim Paneli | Numarataj Araç Filo</title>
-<!-- Tailwind CDN kaldırıldı, yerel derlenmiş dosya eklendi -->
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-<div class="app-wrapper">
- <!-- TITLEBAR -->
- <div class="h-10 bar flex justify-between items-center px-4 shrink-0 drag-area z-[200]">
+<div class="app-wrapper w-full h-full relative">
+
+ <!-- ÖZEL PENCERE ÇUBUĞU (TITLEBAR) -->
+ <div class="h-10 bg-[#060a16] w-full border-b border-white/10 flex justify-between items-center px-4 shrink-0 drag-area z-[200]">
   <div class="flex items-center gap-3 text-gray-400 text-[10px] font-bold tracking-widest no-drag">
    <i class="fa-solid fa-shield-halved text-blue-500"></i>NUMARATAJ FİLO MERKEZ
   </div>
   <div class="flex items-center gap-4 no-drag">
-   <button id="win-min" class="text-gray-400 hover:text-white hover:bg-white/10 p-1.5 rounded transition"><i class="fa-solid fa-minus"></i></button>
-   <button id="win-max" class="text-gray-400 hover:text-white hover:bg-white/10 p-1.5 rounded transition"><i class="fa-regular fa-window-maximize"></i></button>
-   <button id="win-close" class="text-gray-400 hover:text-white hover:bg-red-500 p-1.5 rounded transition"><i class="fa-solid fa-xmark"></i></button>
+   <button id="win-min" class="text-gray-400 hover:text-white transition" title="Küçült"><i class="fa-solid fa-minus"></i></button>
+   <button id="win-max" class="text-gray-400 hover:text-white transition" title="Tam Ekran"><i class="fa-regular fa-window-maximize"></i></button>
+   <button id="win-close" class="text-gray-400 hover:text-red-500 transition" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
   </div>
  </div>
 
- <!-- LOGIN -->
- <div id="admin-login-screen" class="absolute inset-y-10 inset-x-0 z-[90] bg-[#030612]/95 hidden items-center justify-center p-4">
+ <!-- GÜVENLİK VE GÜNCELLEME UYARI EKRANI -->
+ <div id="system-lock-screen" class="absolute inset-y-10 inset-x-0 z-[110] bg-[#0a0f1f]/95 backdrop-blur-md hidden flex-col items-center justify-center">
+  <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]"></i>
+  <h1 id="sl-title" class="text-3xl font-black text-white tracking-wider mb-2">SİSTEM KİLİTLİ</h1>
+  <p id="sl-msg" class="text-gray-300 text-center max-w-md"></p>
+  <button onclick="location.reload()" class="mt-8 text-blue-400 text-sm font-bold no-drag hover:text-blue-300 underline"><i class="fa-solid fa-rotate-right mr-2"></i>Tekrar Dene</button>
+ </div>
+
+ <!-- SPLASH EKRANI -->
+ <div id="splash-screen" class="absolute inset-y-10 inset-x-0 z-[100] bg-[#0a0f1f] flex flex-col items-center justify-center transition-opacity duration-500">
+  <div class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-3xl flex items-center justify-center animate-splash mb-8 border border-blue-400/30">
+    <i class="fa-solid fa-shield-halved text-5xl text-white"></i>
+  </div>
+  <h1 class="text-white font-extrabold tracking-widest text-2xl mb-1">NUMARATAJ FİLO</h1>
+  <p class="text-blue-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Yönetim Paneli</p>
+  <p class="text-textmuted text-sm mt-6" id="splash-text">Veritabanı Güvenlik Kontrolleri Yapılıyor...</p>
+ </div>
+
+ <!-- LOGIN EKRANI -->
+ <div id="admin-login-screen" class="absolute inset-y-10 inset-x-0 z-[90] bg-[#030612]/80 backdrop-blur-sm hidden items-center justify-center p-4">
   <div class="glass-modal w-full max-w-sm flex flex-col pop-in border-blue-500/30 border-2">
    <div class="p-6 border-b border-white/10 flex flex-col items-center text-center">
     <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-3"><i class="fa-solid fa-lock text-3xl text-blue-400"></i></div>
     <h3 class="font-extrabold text-xl text-white">Güvenli Giriş</h3>
    </div>
    <form id="form-admin-login" class="p-6 space-y-5 no-drag">
+    <p class="text-xs text-textmuted text-center">Lütfen veritabanı yönetici şifresini girin.</p>
     <input type="password" id="al-pw" class="w-full p-4 text-center font-bold tracking-widest" placeholder="Yönetici Şifresi" required>
-    <button type="submit" class="btn-3d btn-blue w-full py-4 text-lg">Giriş Yap</button>
+    <button id="al-btn" type="submit" class="btn-3d btn-blue w-full py-4 text-lg">Giriş Yap</button>
    </form>
   </div>
  </div>
 
- <div id="toast-container" class="absolute top-12 right-6 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+ <div id="toast-container"></div>
 
- <!-- ANA UYGULAMA -->
+ <!-- YÖNETİCİ ANA EKRANI -->
  <div id="app" class="hidden flex-1 min-h-0 w-full relative">
   <div class="flex w-full h-full">
-   <!-- SOL MENÜ -->
-   <aside class="side flex w-64 shrink-0 flex-col p-4 no-drag transition-all duration-300">
+   
+   <aside class="side flex w-64 shrink-0 flex-col p-4 no-drag">
     <div class="flex items-center gap-3 px-2 py-4 mb-4 border-b border-white/10">
-     <div class="bg-gradient-to-br from-blue-500 to-indigo-700 p-3 rounded-xl border border-blue-400/40"><i class="fa-solid fa-truck-fast text-2xl text-white"></i></div>
+     <div class="bg-gradient-to-br from-blue-500 to-indigo-700 p-3 rounded-xl border border-blue-400/40"><i class="fa-solid fa-shield-halved text-2xl text-white"></i></div>
      <div><div class="font-extrabold text-white leading-tight text-sm">FİLO YÖNETİM</div><div class="text-[.6rem] text-blue-300 font-bold uppercase tracking-[.15em] mt-1" id="hdr-org">Numarataj Şube</div></div>
     </div>
     <nav class="space-y-2 flex-1">
      <button class="nav-btn active" data-tab="dash" onclick="window.switchAdminTab('dash')"><i class="fa-solid fa-chart-pie"></i>Dashboard</button>
      <button class="nav-btn" data-tab="records" onclick="window.switchAdminTab('records')"><i class="fa-solid fa-list"></i>Görev Kayıtları</button>
      <button class="nav-btn" data-tab="fleet" onclick="window.switchAdminTab('fleet')"><i class="fa-solid fa-car"></i>Araç Filosu</button>
-     <button class="nav-btn" data-tab="users" onclick="window.switchAdminTab('users')"><i class="fa-solid fa-users"></i>Personel</button>
-     <button class="nav-btn" data-tab="settings" onclick="window.switchAdminTab('settings')"><i class="fa-solid fa-gear"></i>Ayarlar</button>
+     <button class="nav-btn" data-tab="users" onclick="window.switchAdminTab('users')"><i class="fa-solid fa-users"></i>Personel Yönetimi</button>
+     <button class="nav-btn" data-tab="settings" onclick="window.switchAdminTab('settings')"><i class="fa-solid fa-gear"></i>Sistem Ayarları</button>
     </nav>
     <div class="mt-auto pt-4 border-t border-white/10 flex items-center justify-between px-2">
-     <div class="flex items-center gap-2" id="conn-status">
-      <span class="w-2 h-2 rounded-full bg-red-500"></span><span class="text-[10px] font-bold text-red-500 uppercase">Bağlanıyor...</span>
+     <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+      <span class="text-[10px] font-bold text-green-400 uppercase">Canlı Bağlantı</span>
      </div>
+     <button onclick="location.reload()" class="text-red-400 hover:text-red-300 text-sm" title="Programı Kilitle"><i class="fa-solid fa-lock"></i></button>
     </div>
    </aside>
 
-   <!-- SAĞ İÇERİK -->
-   <div class="flex-1 min-w-0 flex flex-col h-full bg-[#030612]/30 relative no-drag">
+   <div class="flex-1 min-w-0 flex flex-col w-full h-full bg-[#030612]/30 relative no-drag">
     <header class="bar w-full shrink-0 px-6 py-4 flex items-center justify-between gap-3 shadow-lg z-10">
-     <div class="min-w-0"><h2 id="page-title" class="text-xl font-extrabold text-white truncate tracking-wide">Dashboard</h2></div>
+     <div class="min-w-0"><h2 id="page-title" class="text-xl font-extrabold text-white truncate tracking-wide">Dashboard</h2><p class="clock text-xs text-textmuted mt-1"></p></div>
      <div class="flex items-center gap-3 shrink-0">
       <button onclick="window.openVehicleForm()" class="btn-3d btn-blue px-4 py-2.5 text-sm"><i class="fa-solid fa-plus mr-2"></i>Yeni Araç</button>
       <button onclick="window.openManualMissionForm()" class="btn-3d btn-yellow px-4 py-2.5 text-sm"><i class="fa-solid fa-file-pen mr-2"></i>Elle Kayıt Gir</button>
@@ -73,92 +93,146 @@
     </header>
 
     <main id="admin-main" class="flex-1 min-h-0 w-full overflow-y-auto p-6 relative">
-     <!-- Sekme içerikleri buraya JS ile yüklenecek (Kısa tutulmuştur, önceki tasarım yapısı korunacaktır) -->
+     <!-- DASHBOARD -->
      <div id="admin-dash" class="space-y-6 w-full">
-         <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-             <div class="stat glass p-6 border-b-4 border-b-gray-400"><i class="ico fa-solid fa-layer-group"></i><p class="ch-title">Toplam Araç</p><h3 id="dash-tot-veh" class="text-4xl font-black text-white">0</h3></div>
-             <!-- Diğer stat kartları... -->
-         </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+       <div onclick="window.filterDashboard('all')" class="stat glass p-6 border-b-4 border-b-gray-400"><i class="ico fa-solid fa-layer-group text-gray-400"></i><p class="text-xs font-bold text-textmuted uppercase tracking-wider">Toplam Araç</p><h3 id="dash-tot-veh" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('busy')" class="stat glass p-6 border-b-4 border-b-mission"><i class="ico fa-solid fa-route text-mission"></i><p class="text-xs font-bold text-mission uppercase tracking-wider">Sahada</p><h3 id="dash-act-mis" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('available')" class="stat glass p-6 border-b-4 border-b-success"><i class="ico fa-solid fa-square-parking text-success"></i><p class="text-xs font-bold text-success uppercase tracking-wider">Garajda</p><h3 id="dash-avl-veh" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('maintenance')" class="stat glass p-6 border-b-4 border-b-warning"><i class="ico fa-solid fa-wrench text-warning"></i><p class="text-xs font-bold text-warning uppercase tracking-wider">Sanayide</p><h3 id="dash-mnt-veh" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
+      </div>
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+       <div class="xl:col-span-8"><div class="glass p-6 h-full"><div class="flex justify-between items-center mb-4"><h3 class="ch-title !mb-0 !text-mission text-sm"><i class="fa-solid fa-satellite-dish mr-2 animate-pulse"></i>Sahadaki Araçlar</h3><span id="dash-live-count" class="badge badge-mission px-3 py-1 text-xs">0 Araç</span></div><div class="tbl-wrap no-scrollbar" style="max-height:350px"><table class="text-left min-w-[560px]"><thead><tr><th>Plaka</th><th>Personel</th><th>Çıkış</th><th>Güzergah / Amaç</th></tr></thead><tbody id="dash-live-table"></tbody></table></div></div></div>
+       <div class="xl:col-span-4"><div class="glass p-6 flex flex-col h-full" style="max-height:450px"><h3 class="ch-title !mb-1 !text-warning text-sm"><i class="fa-solid fa-bell mr-2"></i>Uyarı Merkezi</h3><p class="text-[10px] text-textmuted mb-4 border-b border-white/10 pb-4">Arıza, bakım ve gecikme bildirimleri.</p><div id="dash-alerts" class="space-y-3 overflow-y-auto flex-1 no-scrollbar pr-2"></div></div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+       <div class="glass p-6"><h3 class="ch-title text-sm"><i class="fa-solid fa-chart-pie text-primary mr-2"></i>Görev Amacı Dağılımı</h3><div id="ch-purpose" class="mt-4"></div></div>
+       <div class="glass p-6"><h3 class="ch-title text-sm"><i class="fa-solid fa-chart-line text-success mr-2"></i>Aylık Filo KM</h3><div id="ch-monthly" class="mt-4"></div></div>
+       <div class="glass p-6"><h3 class="ch-title text-sm"><i class="fa-solid fa-car-side text-warning mr-2"></i>Araç Kullanımı (KM)</h3><div id="ch-vehicles" class="space-y-4 mt-4"></div></div>
+      </div>
+      <div class="glass p-6"><h3 class="ch-title text-sm"><i class="fa-solid fa-trophy text-yellow-500 mr-2"></i>Ayın Şoförleri</h3><div id="dash-top-drivers" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 mt-4"></div></div>
      </div>
-     <div id="admin-records" class="hidden h-full flex-col w-full"></div>
-     <div id="admin-fleet" class="hidden w-full"><div id="fleet-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div></div>
-     <div id="admin-users" class="hidden h-full flex-col w-full"></div>
-     <div id="admin-settings" class="hidden space-y-6 pb-10 w-full"></div>
+
+     <!-- KAYITLAR -->
+     <div id="admin-records" class="hidden h-full flex-col w-full">
+      <div class="glass p-6 mb-5 shrink-0"><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end"><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Araç</label><select id="rec-veh" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Personel</label><select id="rec-usr" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Ay</label><input type="month" id="rec-month" class="w-full p-3.5"></div><div class="flex gap-3"><button onclick="window.renderRecords()" class="btn-3d btn-blue flex-1 py-3.5"><i class="fa-solid fa-filter mr-2"></i>Filtrele</button><button onclick="window.exportCSV()" class="btn-3d btn-green flex-1 py-3.5"><i class="fa-solid fa-file-excel mr-2"></i>CSV</button></div></div></div>
+      <div class="glass flex-1 min-h-0 flex flex-col"><div class="tbl-wrap flex-1"><table class="text-left min-w-[1000px] w-full"><thead><tr><th>Durum</th><th>Sürücü</th><th>Plaka</th><th>Güzergah & Not</th><th>Çıkış</th><th>Dönüş</th><th>Fark</th><th class="text-center">İşlem</th></tr></thead><tbody id="records-table" class="text-sm"></tbody></table></div></div>
+     </div>
+
+     <!-- FİLO -->
+     <div id="admin-fleet" class="hidden w-full"><div class="mb-6"><select id="fleet-filter" onchange="window.renderFleet()" class="p-3.5 text-sm font-bold w-64 bg-black/40"><option value="all">Tüm Araçlar</option><option value="available">Müsait (Garajda)</option><option value="busy">Görevde (Sahada)</option><option value="maintenance">Sanayide</option></select></div><div id="fleet-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div></div>
+
+     <!-- PERSONEL -->
+     <div id="admin-users" class="hidden h-full flex-col w-full"><div class="flex justify-end mb-5 shrink-0"><button onclick="window.openUserForm()" class="btn-3d btn-green px-6 py-3.5"><i class="fa-solid fa-user-plus mr-2"></i>Yeni Ekle</button></div><div class="glass flex-1 min-h-0 flex flex-col"><div class="tbl-wrap flex-1"><table class="text-left min-w-[600px] w-full"><thead><tr><th>Ad Soyad</th><th>Sicil / Telefon</th><th>Ehliyet</th><th class="text-center">Durum</th><th class="text-center">İşlem</th></tr></thead><tbody id="users-table"></tbody></table></div></div></div>
+
+     <!-- AYARLAR -->
+     <div id="admin-settings" class="hidden space-y-6 pb-10 w-full">
+      <div class="glass p-8 border-l-4 border-l-warning"><h3 class="text-xl font-bold mb-2 text-white"><i class="fa-solid fa-oil-can text-warning mr-3"></i>Bakım Ayarları</h3><p class="text-sm text-textmuted mb-6">Uyarı eşikleri.</p><form id="form-maint-cfg" class="grid sm:grid-cols-4 gap-6 items-end"><div><label class="text-xs font-bold text-textmuted block mb-2">Aralık (KM)</label><select id="cfg-interval" class="w-full p-4"><option value="5000">5.000 KM</option><option value="7500">7.500 KM</option><option value="10000">10.000 KM</option><option value="12500">12.500 KM</option><option value="15000">15.000 KM</option><option value="20000">20.000 KM</option><option value="30000">30.000 KM</option></select></div><div><label class="text-xs font-bold text-textmuted block mb-2">Uyarı Eşiği</label><select id="cfg-warn" class="w-full p-4"><option value="500">500 KM kala</option><option value="1000">1.000 KM kala</option><option value="1500">1.500 KM kala</option><option value="2000">2.000 KM kala</option></select></div><div><label class="text-xs font-bold text-textmuted block mb-2">Süre</label><select id="cfg-months" class="w-full p-4"><option value="0">Sadece KM</option><option value="6">6 Ayda Bir</option><option value="12">Yılda Bir</option></select></div><button type="submit" class="btn-3d btn-yellow py-4">Kaydet</button></form></div>
+      <div class="glass p-8 border-l-4 border-l-primary"><h3 class="text-xl font-bold mb-2 text-white">Görev Kategorileri</h3><div class="flex gap-8"><div class="flex-1 space-y-2 max-h-[200px] overflow-y-auto pr-2 no-scrollbar" id="settings-purposes-list"></div><form id="form-add-purpose" class="flex gap-3 md:w-1/3 h-fit"><input type="text" id="new-purpose-name" maxlength="40" class="w-full p-4 text-sm" placeholder="Yeni kategori..." required><button type="submit" class="btn-3d btn-green px-6"><i class="fa-solid fa-plus text-lg"></i></button></form></div></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+       <div class="glass p-8"><h3 class="text-xl font-bold mb-5 text-white">Kurum & QR Ayarları</h3><form id="form-config" class="space-y-5"><div><label class="text-xs font-bold text-textmuted block mb-2">A4 Başlığı</label><input id="cfg-org" class="w-full p-4 text-sm font-bold"></div><div><label class="text-xs font-bold text-textmuted block mb-2">Alt Birim</label><input id="cfg-sub" class="w-full p-4 text-sm font-bold"></div><div><label class="text-xs font-bold text-textmuted block mb-2">QR Web Adresi</label><input id="cfg-url" class="w-full p-4 text-sm font-mono text-blue-300"></div><button type="submit" class="btn-3d btn-blue w-full py-4 mt-2">Kaydet</button></form></div>
+       <div class="glass p-8"><h3 class="text-xl font-bold mb-5 text-white">Yönetici Şifresi Değiştir</h3><form id="form-admin-pw" class="space-y-5"><div><label class="text-xs font-bold text-textmuted block mb-2">Mevcut Şifreniz</label><input type="password" id="pw-old" class="w-full p-4 text-center tracking-widest font-bold" required></div><div><label class="text-xs font-bold text-textmuted block mb-2">Yeni Şifreniz</label><input type="password" id="pw-new" minlength="4" class="w-full p-4 text-center tracking-widest font-bold" placeholder="En az 4 karakter" required></div><button type="submit" class="btn-3d btn-yellow w-full py-4 mt-2">Şifreyi Güncelle</button></form></div>
+      </div>
+     </div>
     </main>
+
+    <!-- SAĞ ALT İMZA -->
+    <div class="absolute bottom-4 right-6 text-[10px] text-gray-500/50 font-black tracking-[0.2em] pointer-events-none z-[9999] selection:bg-transparent">© 2026 TONOZ</div>
    </div>
   </div>
  </div>
 </div>
 
-<!-- GÜNCELLENMİŞ MODALLAR (Merkezleme ve eksik alanlar çözüldü) -->
-<div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 overflow-y-auto no-drag">
+<!-- ================= YÖNETİCİ MODALLARI ================= -->
+<div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  
- <!-- ARAÇ FORMU (Eksikler Giderildi) -->
- <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
-      <h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3>
-      <button class="modal-close text-textmuted hover:text-white"><i class="fa-solid fa-xmark text-2xl"></i></button>
-  </div>
-  <form id="form-vehicle" class="p-8 space-y-6 overflow-y-auto"><input type="hidden" id="vf-id">
-   <div class="grid sm:grid-cols-2 gap-5">
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" class="w-full p-3 uppercase font-black text-center" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" class="w-full p-3 font-bold" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Şasi No (VIN)</label><input type="text" id="vf-vin" class="w-full p-3 uppercase font-mono"></div>
-    <div class="flex gap-2">
-        <div class="w-1/2"><label class="block text-xs font-bold text-textmuted mb-2">Yıl</label><input type="number" id="vf-year" class="w-full p-3"></div>
-        <div class="w-1/2"><label class="block text-xs font-bold text-textmuted mb-2">Renk</label><input type="text" id="vf-color" class="w-full p-3"></div>
-    </div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Güncel KM *</label><input type="number" id="vf-km" class="w-full p-3 font-black text-blue-400 text-center" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Yakıt</label><select id="vf-fuel" class="w-full p-3"><option>Dizel</option><option>Benzin</option><option>Elektrik</option></select></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Muayene Bitiş</label><input type="date" id="vf-ins" class="w-full p-3"></div>
-    <div id="vf-status-box" class="hidden"><label class="block text-xs font-bold text-textmuted mb-2">Durum</label><select id="vf-status" class="w-full p-3 font-bold"><option value="available">Müsait</option><option value="maintenance">Sanayide</option></select></div>
+ <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
+   <div class="flex items-center gap-6">
+    <div class="w-40 flex shrink-0 justify-start"><div id="vd-plate-box" class="scale-[1.2] origin-left"></div></div>
+    <div class="flex flex-col gap-1"><h3 id="vd-model" class="font-extrabold text-2xl text-white"></h3><div id="vd-status" class="mt-1"></div></div>
    </div>
-   <div><label class="block text-xs font-bold text-textmuted mb-2">Araç Notu</label><textarea id="vf-notes" class="w-full p-3" rows="2"></textarea></div>
-   <button type="submit" class="btn-3d btn-green w-full py-4 text-lg">Kaydet</button>
-  </form>
+   <button class="modal-close w-12 h-12 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-2xl text-textmuted"></i></button>
+  </div>
+  <div class="flex px-6 pt-5 border-b border-white/10 gap-3 overflow-x-auto no-scrollbar shrink-0 bg-black/20">
+   <button onclick="window.vdTab('info')" id="vd-tab-info" class="border-b-4 pb-4 px-5 text-sm font-extrabold whitespace-nowrap uppercase tracking-wider transition-colors">Genel Bakış</button>
+   <button onclick="window.vdTab('maint')" id="vd-tab-maint" class="border-b-4 pb-4 px-5 text-sm font-extrabold whitespace-nowrap uppercase tracking-wider transition-colors">Bakım Geçmişi</button>
+   <button onclick="window.vdTab('defects')" id="vd-tab-defects" class="border-b-4 pb-4 px-5 text-sm font-extrabold whitespace-nowrap uppercase tracking-wider transition-colors">Arıza Kayıtları</button>
+   <button onclick="window.vdTab('history')" id="vd-tab-history" class="border-b-4 pb-4 px-5 text-sm font-extrabold whitespace-nowrap uppercase tracking-wider transition-colors">Görev Geçmişi</button>
+   <button onclick="window.vdTab('qr')" id="vd-tab-qr" class="border-b-4 pb-4 px-5 text-sm font-extrabold whitespace-nowrap uppercase tracking-wider transition-colors"><i class="fa-solid fa-qrcode mr-2"></i>QR Kod</button>
+  </div>
+  <div class="p-6 md:p-8 overflow-y-auto flex-1 bg-[#0a0f1f]/50">
+   <div id="vd-info" class="space-y-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+     <div class="glass p-5 flex flex-col items-center justify-center text-center"><p class="text-[11px] text-textmuted uppercase font-bold tracking-widest">Güncel KM</p><p id="vdi-km" class="font-black text-3xl mt-2 text-blue-400"></p></div>
+     <div class="glass p-5 flex flex-col items-center justify-center text-center"><p class="text-[11px] text-textmuted uppercase font-bold tracking-widest">Yakıt</p><p id="vdi-fuel" class="font-bold text-lg mt-2 text-white"></p></div>
+     <div class="glass p-5 flex flex-col items-center justify-center text-center"><p class="text-[11px] text-textmuted uppercase font-bold tracking-widest">Şasi No</p><p id="vdi-vin" class="font-bold text-sm mt-2 text-white font-mono"></p></div>
+     <div class="glass p-5 flex flex-col items-center justify-center text-center"><p class="text-[11px] text-textmuted uppercase font-bold tracking-widest">Muayene</p><p id="vdi-ins" class="font-bold text-sm mt-2 text-white"></p></div>
+    </div>
+    <div class="glass p-6 md:p-8 border-l-4 border-l-yellow-500 bg-yellow-500/5">
+     <div class="flex justify-between items-center mb-6"><h4 class="text-sm font-extrabold text-yellow-500 uppercase tracking-widest"><i class="fa-solid fa-oil-can mr-2"></i>Bakım Durumu</h4><div class="flex gap-3"><button id="vdi-btn-maint" class="btn-3d btn-yellow px-4 py-2.5 text-xs"><i class="fa-solid fa-wrench mr-2"></i>Bakım İşle</button><button id="vdi-btn-insp" class="btn-3d btn-green px-4 py-2.5 text-xs"><i class="fa-solid fa-calendar-check mr-2"></i>Muayene Yenile</button></div></div>
+     <div id="vdi-maint" class="text-sm bg-black/40 p-5 rounded-2xl"></div>
+    </div>
+    <div class="glass p-6 border-l-4 border-l-warning"><h4 class="text-xs font-bold text-warning uppercase mb-3"><i class="fa-solid fa-bullhorn mr-2"></i>Yönetici Notu</h4><p id="vdi-notes" class="text-white text-sm bg-black/30 p-4 rounded-xl border border-white/5"></p></div>
+    <div class="flex justify-end gap-4 pt-6 border-t border-white/10"><button id="vdi-btn-del" class="btn-3d btn-red px-6 py-3 text-sm"><i class="fa-solid fa-trash mr-2"></i>Sistemden Sil</button><button id="vdi-btn-edit" class="btn-3d btn-blue px-8 py-3 text-sm"><i class="fa-solid fa-pen mr-2"></i>Düzenle</button></div>
+   </div>
+   <div id="vd-maint" class="hidden"><div class="glass overflow-x-auto rounded-2xl"><table class="text-left w-full"><thead><tr><th>Tarih</th><th>İşlem</th><th>KM</th><th>Not</th></tr></thead><tbody id="vdm-table"></tbody></table></div></div>
+   <div id="vd-defects" class="hidden"><div class="glass overflow-hidden rounded-2xl"><table class="text-left w-full"><thead><tr><th class="w-1/3">Şikayet</th><th>Rapor</th></tr></thead><tbody id="vdd-table"></tbody></table></div></div>
+   <div id="vd-history" class="hidden"><div class="glass overflow-x-auto rounded-2xl"><table class="text-left w-full"><thead><tr><th>Çıkış & Dönüş</th><th>Personel</th><th>Güzergah</th><th class="text-right">KM</th></tr></thead><tbody id="vdh-table"></tbody></table></div></div>
+   <div id="vd-qr" class="hidden flex-col items-center py-10"><div class="glass p-10 flex flex-col items-center text-center max-w-md w-full bg-white/5 border border-white/10"><div id="qr-modal-plate-box" class="mb-10 scale-150"></div><div id="qrcode-box" class="p-4 bg-white rounded-2xl mb-6 shadow-2xl"></div><p id="qr-url-info" class="text-[10px] text-gray-500 mt-4 break-all bg-black/50 p-2 rounded w-full border border-white/5"></p></div><button onclick="window.printQR()" class="btn-3d btn-blue px-10 py-5 mt-8 text-lg font-extrabold tracking-wider"><i class="fa-solid fa-print mr-3"></i>A4 Çıktısı Yazdır</button></div>
+  </div>
  </div>
 
- <!-- PERSONEL FORMU (Eksik alanlar eklendi) -->
+ <!-- Diğer Modallar -->
+ <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
+  <form id="form-vehicle" class="p-8 space-y-6 overflow-y-auto"><input type="hidden" id="vf-id">
+   <div class="grid sm:grid-cols-2 gap-5">
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" maxlength="12" class="w-full p-4 uppercase font-extrabold text-xl text-center" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" maxlength="40" class="w-full p-4 font-bold" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Güncel KM *</label><input type="number" id="vf-km" class="w-full p-4 font-extrabold text-xl text-blue-400 bg-blue-900/10 text-center" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Yakıt</label><select id="vf-fuel" class="w-full p-4"><option>Dizel</option><option>Benzin</option><option>Elektrik</option></select></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Model Yılı</label><input type="number" id="vf-year" class="w-full p-4" placeholder="2020"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Renk</label><input type="text" id="vf-color" class="w-full p-4" placeholder="Beyaz"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Şasi No (VIN)</label><input type="text" id="vf-vin" class="w-full p-4 font-mono"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Muayene Bitiş</label><input type="date" id="vf-ins" class="w-full p-4"></div>
+    <div class="sm:col-span-2 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5"><p class="text-sm font-extrabold text-yellow-400 mb-2">Son Bakım Bilgisi (Sisteme Giriş Öncesi)</p><div class="grid sm:grid-cols-2 gap-4"><input type="number" id="vf-lastkm" class="p-4 bg-black/40" placeholder="Son bakım KM"><input type="date" id="vf-lastdate" class="p-4 bg-black/40"></div></div>
+    <div id="vf-status-box" class="hidden sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Durum</label><select id="vf-status" class="w-full p-4 font-bold"><option value="available">Müsait</option><option value="maintenance">Sanayide</option></select></div>
+    <div class="sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Yönetici Notu</label><textarea id="vf-notes" class="w-full p-4" rows="2"></textarea></div>
+   </div>
+   <button type="submit" class="btn-3d btn-green w-full py-5 text-lg"><i class="fa-solid fa-floppy-disk mr-2"></i>Kaydet</button>
+  </form>
+ </div>
+ 
  <div id="modal-user-form" class="glass-modal w-full max-w-md hidden flex-col">
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="uf-title" class="text-xl font-extrabold text-white">Personel</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
   <form id="form-user" class="p-8 space-y-5"><input type="hidden" id="uf-id">
-   <input type="text" id="uf-name" class="w-full p-3 font-bold text-lg" placeholder="Ad Soyad" required>
-   <div class="grid grid-cols-2 gap-5">
-    <input type="text" id="uf-sicil" class="w-full p-3" placeholder="Sicil">
-    <input type="text" id="uf-phone" class="w-full p-3" placeholder="Telefon">
-   </div>
-   <input type="text" id="uf-lic" class="w-full p-3 text-center" placeholder="Ehliyet (Örn: B, E)">
-   <div class="bg-blue-900/20 p-2 rounded-xl border border-blue-500/20"><label class="block text-xs font-bold text-blue-300 text-center mt-1">4 Haneli PIN</label><input type="password" id="uf-pin" maxlength="4" class="w-full p-3 text-center tracking-[1em] font-extrabold text-2xl bg-black/50 text-white" placeholder="••••"></div>
-   <div id="uf-status-box" class="hidden"><select id="uf-active" class="w-full p-3 font-bold"><option value="true">Aktif</option><option value="false">Pasif</option></select></div>
-   <button type="submit" class="btn-3d btn-green w-full py-4">Kaydet</button>
+   <input type="text" id="uf-name" class="w-full p-4 font-bold text-lg" placeholder="Ad Soyad" required>
+   <div class="grid grid-cols-2 gap-5"><input type="text" id="uf-sicil" class="w-full p-4" placeholder="Sicil"><input type="text" id="uf-phone" class="w-full p-4" placeholder="Telefon"></div>
+   <input type="text" id="uf-lic" class="w-full p-4 text-center font-bold" placeholder="Ehliyet (Örn: B, E)">
+   <div class="bg-blue-900/20 p-2 rounded-xl border border-blue-500/20"><label class="block text-xs font-bold text-blue-300 text-center mt-1">4 Haneli PIN <span id="uf-pin-hint" class="text-red-400"></span></label><input type="password" id="uf-pin" maxlength="4" class="w-full p-3 text-center tracking-[1em] font-extrabold text-2xl bg-black/50 text-white" placeholder="••••"></div>
+   <div id="uf-status-box" class="hidden"><select id="uf-active" class="w-full p-4 font-bold"><option value="true">Aktif</option><option value="false">Pasif</option></select></div>
+   <button type="submit" class="btn-3d btn-green w-full py-5">Kaydet</button>
   </form>
  </div>
+ 
+ <div id="modal-resolve-note" class="glass-modal w-full max-w-md hidden flex-col"><form id="form-resolve-note" class="p-8"><input type="hidden" id="rn-mid"><textarea id="rn-text" class="w-full p-4 mb-4" placeholder="Nasıl çözüldü?" required></textarea><button type="submit" class="btn-3d btn-green w-full py-4">Kapat</button></form></div>
+ <div id="modal-maint" class="glass-modal w-full max-w-md hidden flex-col"><form id="form-maint" class="p-8"><input type="hidden" id="mt-vid"><div id="mt-plate" class="flex justify-center mb-4"></div><select id="mt-type" class="w-full p-4 mb-4"><option>Yağ Bakımı</option><option>Periyodik Bakım</option><option>Lastik</option><option>Fren</option><option>Genel/Diğer</option></select><input type="date" id="mt-date" class="w-full p-4 mb-4" required><input type="number" id="mt-km" class="w-full p-4 mb-4" required><textarea id="mt-note" class="w-full p-4 mb-4" placeholder="Not..."></textarea><label class="flex items-center gap-2 mb-4 text-white text-sm"><input type="checkbox" id="mt-reset" checked> Bakım sayacını sıfırla</label><button type="submit" class="btn-3d btn-yellow w-full py-4">Kaydet</button></form></div>
+ <div id="modal-insp" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-insp" class="p-8"><input type="hidden" id="mi-vid"><div id="mi-plate" class="flex justify-center mb-4"></div><input type="date" id="mi-date" class="w-full p-4 mb-4" required><input type="text" id="mi-note" class="w-full p-4 mb-4" placeholder="Muayene Notu"><button type="submit" class="btn-3d btn-green w-full py-4">Kaydet</button></form></div>
+ <div id="modal-manual-mission" class="glass-modal w-full max-w-2xl hidden flex-col"><form id="form-manual-mission" class="p-8"><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-user" class="p-4 w-full" required></select><select id="mm-vehicle" class="p-4 w-full" onchange="window.updateManualVehicleKm()" required></select></div><div class="grid grid-cols-2 gap-5 mb-5"><input type="datetime-local" id="mm-start-time" class="p-4 w-full" required><input type="datetime-local" id="mm-end-time" class="p-4 w-full" required><input type="number" id="mm-start-km" class="p-4 w-full" placeholder="Çıkış KM" required><input type="number" id="mm-end-km" class="p-4 w-full" placeholder="Dönüş KM" required></div><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-purpose" class="p-4 w-full" required></select><input type="text" id="mm-dest" class="p-4 w-full" placeholder="Güzergah" required></div><input type="text" id="mm-note" class="w-full p-4 mb-5" placeholder="Görev Notu / Şikayet"><button type="submit" class="btn-3d btn-yellow w-full py-5">Kaydı Tamamla</button></form></div>
+ <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode"><input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form></div>
 
- <!-- ELLE KAYIT FORMU (Eksik Not alanı eklendi) -->
- <div id="modal-manual-mission" class="glass-modal w-full max-w-2xl hidden flex-col">
-     <!-- Kod kalabalığını önlemek için form içeriği script.js tarafından yönetilir -->
-     <form id="form-manual-mission" class="p-8 space-y-4">
-         <div class="grid sm:grid-cols-2 gap-4">
-             <select id="mm-user" class="p-3 w-full" required></select>
-             <select id="mm-vehicle" class="p-3 w-full" onchange="window.updateManualVehicleKm()" required></select>
-         </div>
-         <div class="grid grid-cols-2 gap-4">
-             <input type="datetime-local" id="mm-start-time" class="p-3 w-full" required>
-             <input type="datetime-local" id="mm-end-time" class="p-3 w-full" required>
-             <input type="number" id="mm-start-km" class="p-3 w-full font-black" placeholder="Çıkış KM" required>
-             <input type="number" id="mm-end-km" class="p-3 w-full font-black" placeholder="Dönüş KM" required>
-         </div>
-         <input type="text" id="mm-dest" class="p-3 w-full" placeholder="Güzergah" required>
-         <input type="text" id="mm-note" class="p-3 w-full" placeholder="Görev Notu / Şikayet (Opsiyonel)">
-         <button type="submit" class="btn-3d btn-yellow w-full py-4">Kaydı Tamamla</button>
-     </form>
+</div>
+</div>
+<!-- A4 ÇIKTI -->
+<div id="print-qr-wrapper" class="hidden">
+ <div style="font-family:Inter,sans-serif;text-align:center;border:8px solid #1e3a8a;padding:60px 40px;border-radius:30px;width:85%;background:#fff">
+  <h1 id="pr-org" style="font-size:30px;font-weight:900;color:#0f172a;margin:0"></h1>
+  <h2 id="pr-sub" style="font-size:22px;font-weight:700;color:#334155;margin:10px 0 30px"></h2>
+  <div id="print-plate-holder" style="display:flex;justify-content:center;margin:60px 0;transform:scale(1.8)"></div>
+  <div id="print-qrcode-holder" style="display:flex;justify-content:center;padding:20px;background:#fff;border:2px dashed #94a3b8;border-radius:20px;width:fit-content;margin:0 auto 40px"></div>
+  <p style="font-size:20px;font-weight:800;color:#1e3a8a;background:#eff6ff;padding:20px;border-radius:15px">Göreve başlamak için telefon kameranızı karekoda okutunuz.</p>
  </div>
-
- <!-- DİĞER MODALLAR (Bakım, Muayene, Düzeltme vs...) -->
- <div id="modal-maint" class="glass-modal w-full max-w-md hidden flex-col"><form id="form-maint" class="p-8"><input type="hidden" id="mt-vid"><select id="mt-type" class="w-full p-3 mb-4"><option>Yağ Bakımı</option><option>Periyodik Bakım</option></select><input type="date" id="mt-date" class="w-full p-3 mb-4" required><input type="number" id="mt-km" class="w-full p-3 mb-4" required><label class="flex items-center gap-2 mb-4 text-sm text-white"><input type="checkbox" id="mt-reset" checked> Bakım sayacını sıfırla</label><button type="submit" class="btn-3d btn-yellow w-full py-4">Kaydet</button></form></div>
- <div id="modal-insp" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-insp" class="p-8"><input type="hidden" id="mi-vid"><input type="date" id="mi-date" class="w-full p-3 mb-4" required><input type="text" id="mi-note" class="w-full p-3 mb-4" placeholder="Muayene Notu"><button type="submit" class="btn-3d btn-green w-full py-4">Kaydet</button></form></div>
- <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col"><form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode"><input type="number" id="rf-skm" class="w-full p-3 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-3 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-4">Güncelle</button></form></div>
-
 </div>
 <script type="module" src="script.js"></script>
 </body>
