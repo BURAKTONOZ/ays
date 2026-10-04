@@ -5,9 +5,8 @@
   "author": "Burak Tonoz",
   "main": "main.js",
   "scripts": {
-    "build-css": "npx tailwindcss -i ./input.css -o ./style.css --minify",
-    "start": "npm run build-css && electron .",
-    "build": "npm run build-css && electron-builder --win"
+    "start": "electron .",
+    "build": "electron-builder --win"
   },
   "build": {
     "appId": "com.buraktonoz.numarataj",
@@ -28,10 +27,7 @@
     "qrcode": "^1.5.3"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.17",
     "electron": "^28.2.0",
-    "electron-builder": "^24.9.1",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1"
+    "electron-builder": "^24.9.1"
   }
 }
