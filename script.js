@@ -69,15 +69,15 @@ onValue(ref(db, '/'), snap => {
   }
 
   applySub(); 
-  if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn&&currentTab==='settings') renderSettings(); 
+  if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn&&currentTab==='settings') window.renderSettings(); 
 });
 
 function checkInitialLoad() { initialLoadCount++; }
-onValue(ref(db, 'vehicles'), snap => { const d = snap.val()||{}; window.DB_DATA.vehicles = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
-onValue(ref(db, 'users'), snap => { const d = snap.val()||{}; window.DB_DATA.users = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
-onValue(ref(db, 'missions'), snap => { const d = snap.val()||{}; window.DB_DATA.missions = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
-onValue(ref(db, 'maints'), snap => { const d = snap.val()||{}; window.DB_DATA.maints = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
-onValue(ref(db, 'purposes'), snap => { window.DB_DATA.purposes = snap.val() || ["Saha Çalışması"]; if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) renderCurrent(); });
+onValue(ref(db, 'vehicles'), snap => { const d = snap.val()||{}; window.DB_DATA.vehicles = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
+onValue(ref(db, 'users'), snap => { const d = snap.val()||{}; window.DB_DATA.users = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
+onValue(ref(db, 'missions'), snap => { const d = snap.val()||{}; window.DB_DATA.missions = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
+onValue(ref(db, 'maints'), snap => { const d = snap.val()||{}; window.DB_DATA.maints = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
+onValue(ref(db, 'purposes'), snap => { window.DB_DATA.purposes = snap.val() || ["Saha Çalışması"]; if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 
 function showLockScreen(title, message) {
   const splash = document.getElementById('splash-screen');
@@ -100,13 +100,14 @@ function showLockScreen(title, message) {
 listen('form-admin-login', 'submit', (e) => {
     e.preventDefault();
     const pw = document.getElementById('al-pw').value.trim();
+    
     if (pw === window.DB_DATA.globalPass) {
         document.getElementById('admin-login-screen').classList.add('hidden');
         document.getElementById('admin-login-screen').classList.remove('flex');
         document.getElementById('app').classList.remove('hidden');
         document.getElementById('app').classList.add('flex');
         isLoggedIn = true;
-        switchAdminTab('dash');
+        window.switchAdminTab('dash');
         window.showToast('Güvenli giriş onaylandı.', 'success');
     } else {
         window.showToast('Girdiğiniz şifre hatalı.', 'error');
@@ -160,16 +161,15 @@ window.switchAdminTab=function(tab){
  const m=document.getElementById('admin-main');if(m)m.scrollTop=0;
  const sec=document.getElementById('admin-'+tab);
  if(sec) { sec.classList.remove('pop-in');void sec.offsetWidth;sec.classList.add('pop-in'); }
- renderCurrent();
+ window.renderCurrent();
 };
 window.renderCurrent=function(){
- if(currentTab==='dash') renderDashboard(); else if(currentTab==='fleet') renderFleet();
- else if(currentTab==='users') renderUsers(); else if(currentTab==='records') initRecords(); else renderSettings();
+ if(currentTab==='dash') window.renderDashboard(); else if(currentTab==='fleet') window.renderFleet();
+ else if(currentTab==='users') window.renderUsers(); else if(currentTab==='records') window.initRecords(); else window.renderSettings();
 };
-window.filterDashboard=function(type){const f=document.getElementById('fleet-filter');if(f)f.value=type;switchAdminTab('fleet')};
+window.filterDashboard=function(type){const f=document.getElementById('fleet-filter');if(f)f.value=type;window.switchAdminTab('fleet')};
 window.populatePurposes=function(id){const s=document.getElementById(id);if(!s)return;s.innerHTML=window.DB_DATA.purposes.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')};
 
-/* MODALLARI AÇAN YARDIMCI FONKSİYONLAR EKLENDİ */
 window.openVehicleForm = function(id=null){
  document.getElementById('form-vehicle').reset();
  const p=document.getElementById('vf-img-preview');p.classList.add('hidden');p.src='';
@@ -187,7 +187,7 @@ window.openVehicleForm = function(id=null){
   document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-plus-circle mr-3 text-green-500"></i>Yeni Araç Ekle';
   document.getElementById('vf-id').value='';sb.classList.add('hidden');
  }
- openModal('modal-vehicle-form');
+ window.openModal('modal-vehicle-form');
 };
 
 window.openManualMissionForm=function(){
@@ -195,7 +195,7 @@ window.openManualMissionForm=function(){
  document.getElementById('mm-user').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.users.filter(u=>!u.isDeleted).map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
  document.getElementById('mm-vehicle').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.vehicles.filter(v=>!v.isDeleted).map(v=>`<option value="${esc(v.id)}">${esc(v.plate)} - ${esc(v.model)}</option>`).join('');
  window.populatePurposes('mm-purpose');
- openModal('modal-manual-mission');
+ window.openModal('modal-manual-mission');
 };
 
 window.updateManualVehicleKm=function(){
@@ -213,7 +213,7 @@ window.openUserForm=function(id=null){
  }else{
   document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-plus mr-3 text-green-400"></i>Yeni Personel Ekle';document.getElementById('uf-id').value='';pin.required=true;document.getElementById('uf-pin-hint').innerText='* Zorunlu';sb.classList.add('hidden');
  }
- openModal('modal-user-form');
+ window.openModal('modal-user-form');
 };
 
 window.openRecordEdit=function(id){
@@ -225,7 +225,7 @@ window.openRecordEdit=function(id){
  document.getElementById('rf-btn').innerText=a?'Görevi Kapat':'Kaydı Güncelle';
  document.getElementById('rf-btn').className=a?'btn-3d btn-red w-full py-5 text-lg mt-2':'btn-3d btn-yellow w-full py-5 text-lg mt-2';
  document.getElementById('rf-skm').value=m.startKm;document.getElementById('rf-ekm').value=a?'':m.endKm;
- openModal('modal-record-edit');
+ window.openModal('modal-record-edit');
 };
 
 function maintStatus(v){
@@ -381,6 +381,7 @@ window.initRecords=function(){
  u.innerHTML='<option value="">Tüm Personel</option>'+window.DB_DATA.users.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
  v.value=pv;u.value=pu; window.renderRecords();
 };
+
 window.renderRecords=function(){
  const elVeh = document.getElementById('rec-veh');
  const elUsr = document.getElementById('rec-usr');
@@ -422,7 +423,7 @@ window.renderSettings=function(){
 };
 function applySub(){const s=window.DB_DATA.config.sub||'Numarataj Şube Müdürlüğü';document.querySelectorAll('#hdr-org').forEach(e=>e.innerText=s)}
 
-window.openResolveModal=function(mid){document.getElementById('rn-mid').value=mid;document.getElementById('rn-text').value='';openModal('modal-resolve-note')};
+window.openResolveModal=function(mid){document.getElementById('rn-mid').value=mid;document.getElementById('rn-text').value='';window.openModal('modal-resolve-note')};
 
 /* ARAÇ FORMU KAYIT */
 listen('vf-img-file', 'change', e=>{
@@ -505,7 +506,7 @@ window.openVehicleDetail=function(id,tab){
  document.getElementById('print-plate-holder').innerHTML=Utils.plate(v.plate);
  document.getElementById('print-qrcode-holder').innerHTML='';
  new QRCode(document.getElementById('print-qrcode-holder'),{text:url,width:300,height:300,colorDark:'#0b1020',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
- window.vdTab(tab||'info');openModal('modal-vehicle-detail');
+ window.vdTab(tab||'info');window.openModal('modal-vehicle-detail');
 };
 
 window.vdTab=function(tab){
@@ -536,7 +537,7 @@ listen('form-resolve-note', 'submit', async e=>{
 window.openMaintForm=function(vid,fromDetail){
  const v=vehicleById(vid);if(!v)return; returnToDetail=fromDetail?vid:null; document.getElementById('form-maint').reset();
  document.getElementById('mt-vid').value=vid;document.getElementById('mt-plate').innerHTML=Utils.plate(v.plate, 'scale-[1.2]');
- document.getElementById('mt-date').value=todayStr();document.getElementById('mt-km').value=v.km; document.getElementById('mt-reset').checked=true; openModal('modal-maint');
+ document.getElementById('mt-date').value=todayStr();document.getElementById('mt-km').value=v.km; document.getElementById('mt-reset').checked=true; window.openModal('modal-maint');
 };
 listen('mt-type', 'change', e=>{document.getElementById('mt-reset').checked=['Yağ Bakımı','Periyodik Bakım'].includes(e.target.value)});
 listen('form-maint', 'submit', async e=>{
@@ -554,7 +555,7 @@ listen('form-maint', 'submit', async e=>{
 
 window.openInspForm=function(vid,fromDetail){
  const v=vehicleById(vid);if(!v)return; returnToDetail=fromDetail?vid:null; document.getElementById('form-insp').reset();
- document.getElementById('mi-vid').value=vid;document.getElementById('mi-plate').innerHTML=Utils.plate(v.plate, 'scale-[1.2]'); openModal('modal-insp');
+ document.getElementById('mi-vid').value=vid;document.getElementById('mi-plate').innerHTML=Utils.plate(v.plate, 'scale-[1.2]'); window.openModal('modal-insp');
 };
 listen('form-insp', 'submit', async e=>{
  e.preventDefault(); const vid=document.getElementById('mi-vid').value,v=vehicleById(vid);if(!v)return;
@@ -581,7 +582,7 @@ listen('form-user', 'submit', async e=>{
 window.deleteUser=async function(id){
  if(activeMissionOfUser(id))return window.showToast('Hata: Bu personelin üzerinde şu an kapanmamış bir görev var. Önce görevi sonlandırın.','error');
  if(!confirm('DİKKAT: Personeli sistemden silmek istediğinize emin misiniz?'))return;
- try { await update(ref(db, 'users/'+id), {isDeleted:true}); window.showToast('Personel silindi.','success'); } catch(e) { window.showToast('Silinemedi','error');}
+ try { await update(ref(db, 'users/'+id), {isDeleted:true}); window.showToast('Personel silindi.','success'); window.renderCurrent(); } catch(e) { window.showToast('Silinemedi','error');}
 };
 
 /* ELLE KAYIT FORMU */
@@ -600,7 +601,7 @@ listen('form-manual-mission', 'submit', async e=>{
  const note=document.getElementById('mm-note').value.trim(); const newId=idGen(); const updates = {};
  updates['/missions/' + newId] = {id:newId,userId:uid,vehicleId:vid,startKm:skm,endKm:ekm,startTime:st.toISOString(),endTime:en.toISOString(),destination:document.getElementById('mm-dest').value.trim(),purpose:document.getElementById('mm-purpose').value,status:'completed',returnNote:note,noteResolved:note?false:true,manual:true};
  const v = vehicleById(vid); if(v && ekm > v.km) updates['/vehicles/' + vid + '/km'] = ekm;
- try { await update(ref(db), updates); window.showToast('Geçmiş kayıt başarıyla eklendi.','success'); closeModal(); } catch(err) { window.showToast('Veritabanına yazılamadı.','error'); }
+ try { await update(ref(db), updates); window.showToast('Geçmiş kayıt başarıyla eklendi.','success'); closeModal(); window.renderCurrent(); } catch(err) { window.showToast('Veritabanına yazılamadı.','error'); }
 });
 
 /* KAYIT GÜNCELLE / ZORLA KAPAT FORMU */
@@ -625,7 +626,7 @@ listen('form-record', 'submit', async e=>{
    const maxK = Math.max(...allM.map(x=>x.endKm!==undefined?x.endKm:x.startKm), v.lastMaintKm||0);
    if(maxK !== v.km) await set(ref(db, '/vehicles/'+m.vehicleId+'/km'), maxK);
   }
-  window.showToast(mode==='close'?'Görev zorla kapatıldı.':'Kayıt başarıyla güncellendi.','success'); closeModal();
+  window.showToast(mode==='close'?'Görev zorla kapatıldı.':'Kayıt başarıyla güncellendi.','success'); closeModal(); window.renderCurrent();
  } catch (err) { window.showToast('Hata oluştu.','error'); }
 });
 
@@ -640,7 +641,7 @@ listen('form-add-purpose', 'submit', async e=>{
 });
 window.deletePurpose=async function(i){
  const ps=window.DB_DATA.purposes;if(ps.length<=1)return window.showToast('En az bir adet görev amacı kalmalıdır.','error');
- ps.splice(i,1); try { await set(ref(db, 'purposes'), ps); } catch(e) { window.showToast('Silinemedi','error'); }
+ ps.splice(i,1); try { await set(ref(db, 'purposes'), ps); window.renderSettings(); } catch(e) { window.showToast('Silinemedi','error'); }
 };
 listen('form-config', 'submit', async e=>{
  e.preventDefault();const url=document.getElementById('cfg-url').value.trim();
