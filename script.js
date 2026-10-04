@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Hata Toleranslı Dinleyici (Sayfada element yoksa programı çökertmez)
 const listen = (id, event, callback) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(event, callback);
@@ -16,7 +15,7 @@ if (window.require) {
     listen('win-close', 'click', () => ipcRenderer.send('window-close'));
 }
 
-// UYGULAMA SÜRÜMÜ
+// UYGULAMA SÜRÜMÜ (Bunu güncelledikçe veritabanını da güncellemen gerekecek)
 const APP_VERSION = "1.0.0";
 
 const firebaseConfig = {
@@ -30,26 +29,30 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-window.DB_DATA = { vehicles: [], users: [], missions: [], purposes: [], maints: [], config: {} };
+window.DB_DATA = { vehicles: [], users: [], missions: [], purposes: [], maints: [], config: {}, globalPass: "5555" };
 let isLoggedIn = false;
 let currentTab = 'dash';
 let initialLoadCount = 0;
 let systemVerified = false;
 
-/* === GÜVENLİK ŞALTERİ & SÜRÜM KONTROLÜ === */
-onValue(ref(db, 'config'), snap => { 
-  const c = snap.val() || {}; 
-  window.DB_DATA.config = c; 
+/* === GÜVENLİK ŞALTERİ & SÜRÜM KONTROLÜ (Düzeltildi) === */
+// Artık config içinden değil, veritabanının en üstünden (root) dinliyoruz
+onValue(ref(db, '/'), snap => { 
+  const rootData = snap.val() || {}; 
+  
+  // Şifreyi Global değişkene al (adminPass senin JSON'da en dışta duruyor)
+  window.DB_DATA.globalPass = rootData.adminPass !== undefined ? String(rootData.adminPass).trim() : "5555";
+  window.DB_DATA.config = rootData.config || {}; 
 
-  // Şalter Kontrolü
-  if (c.isActive === false || String(c.isActive) === "false") {
+  // Şalter Kontrolü (isActive root'ta)
+  if (rootData.isActive === false || String(rootData.isActive) === "false") {
       showLockScreen('SİSTEM KAPATILDI', 'Yönetim paneli sistem yöneticisi tarafından geçici olarak erişime kapatılmıştır. Güvenlik kilidi aktiftir.');
       return;
   }
   
-  // Sürüm Kontrolü
-  if (c.version && String(c.version) !== APP_VERSION) {
-      showLockScreen('GÜNCELLEME GEREKLİ', `Kullandığınız program sürümü (${APP_VERSION}) çok eski. Lütfen güncel sürümü (${c.version}) kurunuz.`);
+  // Sürüm Kontrolü (version root'ta)
+  if (rootData.version && String(rootData.version) !== APP_VERSION) {
+      showLockScreen('GÜNCELLEME GEREKLİ', `Kullandığınız program sürümü (${APP_VERSION}) çok eski. Lütfen güncel sürümü (${rootData.version}) kurunuz.`);
       return;
   }
 
@@ -107,10 +110,9 @@ function showLockScreen(title, message) {
 listen('form-admin-login', 'submit', (e) => {
     e.preventDefault();
     const pw = document.getElementById('al-pw').value.trim();
-    const cfg = window.DB_DATA.config || {};
-    const dbPass = cfg.adminPass ? String(cfg.adminPass).trim() : "1234";
-
-    if (pw === dbPass) {
+    
+    // Gelen şifreyi Global değişkendeki adminPass (Örn: "5555") ile kıyaslıyoruz
+    if (pw === window.DB_DATA.globalPass) {
         document.getElementById('admin-login-screen').classList.add('hidden');
         document.getElementById('admin-login-screen').classList.remove('flex');
         document.getElementById('app').classList.remove('hidden');
@@ -152,7 +154,6 @@ window.showToast=function(msg,type='info'){
 
 function maintCfg(){const c=window.DB_DATA.config;return{interval:c.maintInterval||10000,warn:c.maintWarn||1000,months:c.maintMonths===undefined?12:c.maintMonths}}
 
-/* SÖZDİZİMİ HATASI GİDERİLMİŞ SAAT KONTROLÜ */
 function updateClock(){
   const t=new Date().toLocaleString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
   document.querySelectorAll('.clock').forEach(e => { if(e) e.innerText=t; });
@@ -398,17 +399,17 @@ listen('vf-img-file', 'change', e=>{
   const b=c.toDataURL('image/jpeg',0.6); 
   document.getElementById('vf-img-base64').value=b;const p=document.getElementById('vf-img-preview');p.src=b;p.classList.remove('hidden');
   document.getElementById('vf-img-label').innerHTML='Fotoğrafı Değiştir';
- };img.onerror=()=>showToast('Görsel okunamadı.','error');img.src=ev.target.result};r.readAsDataURL(file);
+ };img.onerror=()=>window.showToast('Görsel okunamadı.','error');img.src=ev.target.result};r.readAsDataURL(file);
 });
 
 listen('form-vehicle', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('vf-id').value,vs=window.DB_DATA.vehicles,g=k=>document.getElementById('vf-'+k).value;
  const plate=fmtPlate(g('plate'));
- if(vs.find(v=>!v.isDeleted&&v.id!==id&&normPlate(v.plate)===normPlate(plate)))return showToast('Hata: Bu plaka sistemde zaten kayıtlı!','error');
+ if(vs.find(v=>!v.isDeleted&&v.id!==id&&normPlate(v.plate)===normPlate(plate)))return window.showToast('Hata: Bu plaka sistemde zaten kayıtlı!','error');
  const km=parseInt(g('km'))||0,lk=parseInt(g('lastkm')),ld=g('lastdate');
- if(!isNaN(lk)&&lk>km)return showToast('Hata: Son bakım KM\'si aracın güncel KM\'sinden büyük olamaz.','error');
- if(ld&&ld>todayStr())return showToast('Hata: Son bakım tarihi gelecek bir tarih olamaz.','error');
+ if(!isNaN(lk)&&lk>km)return window.showToast('Hata: Son bakım KM\'si aracın güncel KM\'sinden büyük olamaz.','error');
+ if(ld&&ld>todayStr())return window.showToast('Hata: Son bakım tarihi gelecek bir tarih olamaz.','error');
  const d={plate,model:g('model').trim(),vin:g('vin').toUpperCase().trim(),year:g('year'),color:g('color').trim(),fuel:g('fuel'),km,ins:g('ins'),lastMaintKm:isNaN(lk)?null:lk,lastMaintDate:ld||'',image:g('img-base64'),notes:g('notes').trim()};
  const newId=id?id:idGen();
  const isNew = !id;
@@ -423,8 +424,8 @@ listen('form-vehicle', 'submit', async e=>{
    const mlId = idGen();
    await set(ref(db, 'maints/' + mlId), {id:mlId,vehicleId:newId,kind:'bakim',type:'Sisteme Giriş Öncesi Bakım',date:d.lastMaintDate||todayStr(),km:d.lastMaintKm,note:'Araç envantere kaydedilirken girilen referans değer',created:new Date().toISOString()});
   }
-  showToast(id?'Araç bilgileri başarıyla güncellendi.':'Yeni araç filoya eklendi.','success'); closeModal();
- } catch(err) { showToast('Veritabanı bağlantı hatası.','error'); }
+  window.showToast(id?'Araç bilgileri başarıyla güncellendi.':'Yeni araç filoya eklendi.','success'); closeModal();
+ } catch(err) { window.showToast('Veritabanı bağlantı hatası.','error'); }
 });
 
 let curVid=null;
@@ -441,9 +442,9 @@ window.openVehicleDetail=function(id,tab){
  document.getElementById('vdi-btn-insp').onclick=()=>openInspForm(id,true);
  document.getElementById('vdi-btn-edit').onclick=()=>openVehicleForm(id);
  document.getElementById('vdi-btn-del').onclick=async ()=>{
-  if(v.status==='busy')return showToast('Hata: Görevde olan araç silinemez. Önce görevi sonlandırın.','error');
+  if(v.status==='busy')return window.showToast('Hata: Görevde olan araç silinemez. Önce görevi sonlandırın.','error');
   if(!confirm('DİKKAT: Bu aracı filodan kalıcı olarak kaldırmak istediğinize emin misiniz?'))return;
-  try { await update(ref(db, 'vehicles/'+id), {isDeleted: true}); closeModal(); showToast('Araç sistemden silindi.','success'); } catch(e) { showToast('Silinemedi','error'); }
+  try { await update(ref(db, 'vehicles/'+id), {isDeleted: true}); closeModal(); window.showToast('Araç sistemden silindi.','success'); } catch(e) { window.showToast('Silinemedi','error'); }
  };
  
  const logs=window.DB_DATA.maints.filter(m=>m.vehicleId===id).sort((a,b)=>(b.date+b.created).localeCompare(a.date+a.created));
@@ -605,13 +606,12 @@ listen('form-config', 'submit', async e=>{
 });
 listen('form-admin-pw', 'submit', async e=>{
   e.preventDefault();
-  const c = window.DB_DATA.config || {};
-  const dbPass = c.adminPass ? String(c.adminPass).trim() : "1234";
+  const dbPass = window.DB_DATA.globalPass;
   const oldPw = document.getElementById('pw-old').value.trim();
   
   if(oldPw !== dbPass) return window.showToast('Güvenlik Hatası: Mevcut şifrenizi yanlış girdiniz.','error');
   try {
-   await update(ref(db, 'config'), { adminPass: document.getElementById('pw-new').value.trim() });
+   await set(ref(db, 'adminPass'), document.getElementById('pw-new').value.trim());
    e.target.reset(); window.showToast('Yönetici şifresi başarıyla güncellendi. Yeni açılışlarda bu şifreyi kullanın.','success');
   } catch(err){ window.showToast('Kaydedilemedi','error'); }
 });
