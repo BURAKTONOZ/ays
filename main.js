@@ -1,55 +1,59 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
+
+// Hata loglama
+const logFile = path.join(app.getPath('userData'), 'error.log');
+process.on('uncaughtException', (err) => {
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${err.stack}\n`);
+});
 
 let mainWindow;
 
-// Windows hata mesajlarını tamamen kapat
-dialog.showErrorBox = function(title, content) {
-    console.log(`Hata engellendi: ${title} - ${content}`);
-};
-
-function createWindow () {
-  mainWindow = new BrowserWindow({
-    width: 1366,
-    height: 800,
-    minWidth: 1024,
-    minHeight: 700,
-    frame: false, 
-    transparent: true, 
-    icon: path.join(__dirname, 'icon.ico'), // Uygulama ikonu
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false 
+// Tek kopya (Single Instance) Kilidi
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
   });
 
-  mainWindow.loadFile('desktop.html');
-  mainWindow.on('unresponsive', (e) => { e.preventDefault(); });
-}
+  function createWindow () {
+    mainWindow = new BrowserWindow({
+      width: 1366,
+      height: 800,
+      minWidth: 1024,
+      minHeight: 700,
+      frame: false,
+      transparent: false, // Yeniden boyutlandırma sorununu çözer
+      backgroundColor: '#0a0f1f',
+      icon: path.join(__dirname, 'icon.ico'),
+      webPreferences: {
+        nodeIntegration: false, // GÜVENLİK: Kapatıldı
+        contextIsolation: true, // GÜVENLİK: Aktifleştirildi
+        preload: path.join(__dirname, 'preload.js')
+      }
+    });
 
-app.whenReady().then(() => {
-  createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
-
-// Arayüzden gelen Küçült, Büyüt ve Kapatma komutları
-ipcMain.on('window-minimize', () => {
-  if(mainWindow) mainWindow.minimize();
-});
-
-ipcMain.on('window-maximize', () => {
-  if(mainWindow) {
-    if(mainWindow.isMaximized()) mainWindow.unmaximize();
-    else mainWindow.maximize();
+    mainWindow.loadFile('desktop.html');
   }
-});
 
-ipcMain.on('window-close', () => {
-  if(mainWindow) mainWindow.close();
-});
+  app.whenReady().then(createWindow);
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+
+  // Güvenli IPC İletişimi
+  ipcMain.on('window-minimize', () => mainWindow?.minimize());
+  ipcMain.on('window-maximize', () => {
+    if(mainWindow) {
+      mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+    }
+  });
+  ipcMain.on('window-close', () => mainWindow?.close());
+}
