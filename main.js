@@ -3,7 +3,7 @@ const path = require('path');
 
 let mainWindow;
 
-// Windows hata pencerelerini susturur
+// Windows hata mesajlarını sustur
 dialog.showErrorBox = function(title, content) {
     console.log(`Hata engellendi: ${title} - ${content}`);
 };
@@ -25,13 +25,12 @@ if (!gotTheLock) {
       height: 800,
       minWidth: 1024,
       minHeight: 700,
-      frame: false, // Windows penceresini tamamen iptal eder
-      transparent: false,
-      backgroundColor: '#0a0f1f',
+      frame: false, // Windows penceresini kapatır
+      transparent: true, // Yuvarlatılmış köşelerin çalışmasını sağlar
       icon: path.join(__dirname, 'icon.ico'),
       webPreferences: {
         nodeIntegration: true, 
-        contextIsolation: false // Buton iletişimini aktif eder
+        contextIsolation: false 
       }
     });
     mainWindow.loadFile('desktop.html');
