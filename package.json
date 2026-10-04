@@ -15,10 +15,12 @@
     "copyright": "Copyright © 2026 Burak Tonoz",
     "win": {
       "target": "portable",
-      "icon": "icon.ico"
+      "icon": "icon.ico",
+      "publisherName": "Burak Tonoz",
+      "legalTrademarks": "Tonoz Art"
     },
     "portable": {
-      "artifactName": "Numarataj_Filo_Portable.exe"
+      "artifactName": "AYS.exe"
     }
   },
   "dependencies": {
