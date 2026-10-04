@@ -2,7 +2,6 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 
 let mainWindow;
 
-// Windows hata mesajlarını tamamen kapat
 dialog.showErrorBox = function(title, content) {
     console.log(`Hata engellendi: ${title} - ${content}`);
 };
@@ -21,8 +20,7 @@ function createWindow () {
     }
   });
 
-  // EXE açıldığında artık desktop.html dosyasını okuyacak
-  mainWindow.loadFile('desktop.html');
+  mainWindow.loadFile('desktop.html'); // Dosya adının desktop.html olduğuna dikkat et
 
   mainWindow.on('unresponsive', (e) => { e.preventDefault(); });
 }
@@ -40,6 +38,16 @@ app.on('window-all-closed', () => {
 
 ipcMain.on('window-minimize', () => {
   if(mainWindow) mainWindow.minimize();
+});
+
+ipcMain.on('window-maximize', () => {
+  if(mainWindow) {
+    if(mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
 });
 
 ipcMain.on('window-close', () => {
