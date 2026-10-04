@@ -20,8 +20,9 @@
    <i class="fa-solid fa-shield-halved text-blue-500"></i>NUMARATAJ FİLO MERKEZ
   </div>
   <div class="flex items-center gap-4 no-drag">
-   <button id="win-min" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-minus"></i></button>
-   <button id="win-close" class="text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
+   <button id="win-min" class="text-gray-400 hover:text-white transition" title="Küçült"><i class="fa-solid fa-minus"></i></button>
+   <button id="win-max" class="text-gray-400 hover:text-white transition" title="Tam Ekran"><i class="fa-regular fa-window-maximize"></i></button>
+   <button id="win-close" class="text-gray-400 hover:text-red-500 transition" title="Kapat"><i class="fa-solid fa-xmark"></i></button>
   </div>
  </div>
 
@@ -131,8 +132,6 @@
      <div id="admin-settings" class="hidden space-y-6 pb-10">
       <div class="glass p-8 border-l-4 border-l-warning"><h3 class="text-xl font-bold mb-2 text-white"><i class="fa-solid fa-oil-can text-warning mr-3"></i>Bakım Ayarları</h3><p class="text-sm text-textmuted mb-6">Uyarı eşikleri.</p><form id="form-maint-cfg" class="grid sm:grid-cols-4 gap-6 items-end"><div><label class="text-xs font-bold text-textmuted block mb-2">Aralık (KM)</label><select id="cfg-interval" class="w-full p-4"><option value="5000">5.000 KM</option><option value="10000">10.000 KM</option><option value="15000">15.000 KM</option></select></div><div><label class="text-xs font-bold text-textmuted block mb-2">Uyarı Eşiği</label><select id="cfg-warn" class="w-full p-4"><option value="500">500 KM kala</option><option value="1000">1.000 KM kala</option></select></div><div><label class="text-xs font-bold text-textmuted block mb-2">Süre</label><select id="cfg-months" class="w-full p-4"><option value="0">Sadece KM</option><option value="12">Yılda Bir</option></select></div><button type="submit" class="btn-3d btn-yellow py-4">Kaydet</button></form></div>
       <div class="glass p-8 border-l-4 border-l-primary"><h3 class="text-xl font-bold mb-2 text-white">Görev Kategorileri</h3><div class="flex gap-8"><div class="flex-1 space-y-2 max-h-[200px] overflow-y-auto pr-2 no-scrollbar" id="settings-purposes-list"></div><form id="form-add-purpose" class="flex gap-3 md:w-1/3 h-fit"><input type="text" id="new-purpose-name" maxlength="40" class="w-full p-4 text-sm" placeholder="Yeni kategori..." required><button type="submit" class="btn-3d btn-green px-6"><i class="fa-solid fa-plus text-lg"></i></button></form></div></div>
-      
-      <!-- DÜZELTİLEN YER: Ayarların alt kısımları ve eksik şifre formu eklendi -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
        <div class="glass p-8"><h3 class="text-xl font-bold mb-5 text-white">Kurum & QR Ayarları</h3><form id="form-config" class="space-y-5"><div><label class="text-xs font-bold text-textmuted block mb-2">A4 Başlığı</label><input id="cfg-org" class="w-full p-4 text-sm font-bold"></div><div><label class="text-xs font-bold text-textmuted block mb-2">Alt Birim</label><input id="cfg-sub" class="w-full p-4 text-sm font-bold"></div><div><label class="text-xs font-bold text-textmuted block mb-2">QR Web Adresi</label><input id="cfg-url" class="w-full p-4 text-sm font-mono text-blue-300"></div><button type="submit" class="btn-3d btn-blue w-full py-4 mt-2">Kaydet</button></form></div>
        <div class="glass p-8"><h3 class="text-xl font-bold mb-5 text-white">Yönetici Şifresi Değiştir</h3><form id="form-admin-pw" class="space-y-5"><div><label class="text-xs font-bold text-textmuted block mb-2">Mevcut Şifreniz</label><input type="password" id="pw-old" class="w-full p-4 text-center tracking-widest font-bold" required></div><div><label class="text-xs font-bold text-textmuted block mb-2">Yeni Şifreniz</label><input type="password" id="pw-new" minlength="4" class="w-full p-4 text-center tracking-widest font-bold" placeholder="En az 4 karakter" required></div><button type="submit" class="btn-3d btn-yellow w-full py-4 mt-2">Şifreyi Güncelle</button></form></div>
@@ -150,10 +149,14 @@
 <!-- ================= YÖNETİCİ MODALLARI ================= -->
 <div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
+  <!-- Üst Kısım: Plaka ve Araç Adı (Kayma Hatası Düzeltildi) -->
   <div class="flex justify-between items-center p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
    <div class="flex items-center gap-6">
     <div class="w-40 flex items-center justify-start shrink-0"><div id="vd-plate-box" class="scale-[1.2] origin-left"></div></div>
-    <div class="flex flex-col gap-1"><h3 id="vd-model" class="font-extrabold text-2xl text-white"></h3><div id="vd-status" class="mt-1"></div></div>
+    <div class="flex flex-col gap-1">
+     <h3 id="vd-model" class="font-extrabold text-2xl text-white"></h3>
+     <div id="vd-status" class="mt-1"></div>
+    </div>
    </div>
    <button class="modal-close w-12 h-12 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-2xl text-textmuted"></i></button>
   </div>
@@ -173,19 +176,28 @@
      <div class="glass p-5 flex flex-col items-center justify-center text-center"><p class="text-[11px] text-textmuted uppercase font-bold tracking-widest">Muayene</p><p id="vdi-ins" class="font-bold text-sm mt-2 text-white"></p></div>
     </div>
     <div class="glass p-6 md:p-8 border-l-4 border-l-yellow-500 bg-yellow-500/5">
-     <div class="flex justify-between items-center mb-6"><h4 class="text-sm font-extrabold text-yellow-500 uppercase tracking-widest"><i class="fa-solid fa-oil-can mr-2"></i>Bakım Durumu</h4><div class="flex gap-3"><button id="vdi-btn-maint" class="btn-3d btn-yellow px-4 py-2.5 text-xs"><i class="fa-solid fa-wrench mr-2"></i>Bakım İşle</button><button id="vdi-btn-insp" class="btn-3d btn-green px-4 py-2.5 text-xs"><i class="fa-solid fa-calendar-check mr-2"></i>Muayene Yenile</button></div></div>
+     <div class="flex justify-between items-center mb-6">
+      <h4 class="text-sm font-extrabold text-yellow-500 uppercase tracking-widest"><i class="fa-solid fa-oil-can mr-2"></i>Bakım Durumu</h4>
+      <div class="flex gap-3"><button id="vdi-btn-maint" class="btn-3d btn-yellow px-4 py-2.5 text-xs"><i class="fa-solid fa-wrench mr-2"></i>Bakım İşle</button><button id="vdi-btn-insp" class="btn-3d btn-green px-4 py-2.5 text-xs"><i class="fa-solid fa-calendar-check mr-2"></i>Muayene Yenile</button></div>
+     </div>
      <div id="vdi-maint" class="text-sm bg-black/40 p-5 rounded-2xl"></div>
     </div>
     <div class="glass p-6 border-l-4 border-l-warning"><h4 class="text-xs font-bold text-warning uppercase mb-3"><i class="fa-solid fa-bullhorn mr-2"></i>Yönetici Notu</h4><p id="vdi-notes" class="text-white text-sm bg-black/30 p-4 rounded-xl border border-white/5"></p></div>
-    <div class="flex justify-end gap-4 pt-6 border-t border-white/10"><button id="vdi-btn-del" class="btn-3d btn-red px-6 py-3 text-sm"><i class="fa-solid fa-trash mr-2"></i>Sistemden Sil</button><button id="vdi-btn-edit" class="btn-3d btn-blue px-8 py-3 text-sm"><i class="fa-solid fa-pen mr-2"></i>Düzenle</button></div>
+    <div class="flex justify-end gap-4 pt-6 border-t border-white/10">
+     <button id="vdi-btn-del" class="btn-3d btn-red px-6 py-3 text-sm"><i class="fa-solid fa-trash mr-2"></i>Sistemden Sil</button><button id="vdi-btn-edit" class="btn-3d btn-blue px-8 py-3 text-sm"><i class="fa-solid fa-pen mr-2"></i>Düzenle</button>
+    </div>
    </div>
    <div id="vd-maint" class="hidden"><div class="glass overflow-x-auto rounded-2xl"><table class="text-left w-full"><thead><tr><th>Tarih</th><th>İşlem</th><th>KM</th><th>Not</th></tr></thead><tbody id="vdm-table"></tbody></table></div></div>
    <div id="vd-defects" class="hidden"><div class="glass overflow-hidden rounded-2xl"><table class="text-left w-full"><thead><tr><th class="w-1/3">Şikayet</th><th>Rapor</th></tr></thead><tbody id="vdd-table"></tbody></table></div></div>
    <div id="vd-history" class="hidden"><div class="glass overflow-x-auto rounded-2xl"><table class="text-left w-full"><thead><tr><th>Çıkış & Dönüş</th><th>Personel</th><th>Güzergah</th><th class="text-right">KM</th></tr></thead><tbody id="vdh-table"></tbody></table></div></div>
-   <div id="vd-qr" class="hidden flex-col items-center py-10"><div class="glass p-10 flex flex-col items-center text-center max-w-md w-full bg-white/5 border border-white/10"><div id="qr-modal-plate-box" class="mb-10 scale-150"></div><div id="qrcode-box" class="p-4 bg-white rounded-2xl mb-6 shadow-2xl"></div><p id="qr-url-info" class="text-[10px] text-gray-500 mt-4 break-all bg-black/50 p-2 rounded w-full border border-white/5"></p></div><button onclick="printQR()" class="btn-3d btn-blue px-10 py-5 mt-8 text-lg font-extrabold tracking-wider"><i class="fa-solid fa-print mr-3"></i>A4 Çıktısı Yazdır</button></div>
+   <div id="vd-qr" class="hidden flex-col items-center py-10">
+    <div class="glass p-10 flex flex-col items-center text-center max-w-md w-full bg-white/5 border border-white/10"><div id="qr-modal-plate-box" class="mb-10 scale-150"></div><div id="qrcode-box" class="p-4 bg-white rounded-2xl mb-6 shadow-2xl"></div><p id="qr-url-info" class="text-[10px] text-gray-500 mt-4 break-all bg-black/50 p-2 rounded w-full border border-white/5"></p></div>
+    <button onclick="printQR()" class="btn-3d btn-blue px-10 py-5 mt-8 text-lg font-extrabold tracking-wider"><i class="fa-solid fa-print mr-3"></i>A4 Çıktısı Yazdır</button>
+   </div>
   </div>
  </div>
 
+ <!-- Diğer Modallar -->
  <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
   <form id="form-vehicle" class="p-8 space-y-6 overflow-y-auto"><input type="hidden" id="vf-id">
@@ -205,7 +217,10 @@
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]"><h3 id="uf-title" class="text-xl font-extrabold text-white">Personel</h3><button class="modal-close text-textmuted"><i class="fa-solid fa-xmark text-2xl"></i></button></div>
   <form id="form-user" class="p-8 space-y-5"><input type="hidden" id="uf-id">
    <input type="text" id="uf-name" class="w-full p-4 font-bold text-lg" placeholder="Ad Soyad" required>
-   <div class="grid grid-cols-2 gap-5"><input type="text" id="uf-sicil" class="w-full p-4" placeholder="Sicil"><input type="text" id="uf-phone" class="w-full p-4" placeholder="Telefon"></div>
+   <div class="grid grid-cols-2 gap-5">
+    <input type="text" id="uf-sicil" class="w-full p-4" placeholder="Sicil">
+    <input type="text" id="uf-phone" class="w-full p-4" placeholder="Telefon">
+   </div>
    <div class="bg-blue-900/20 p-2 rounded-xl border border-blue-500/20"><label class="block text-xs font-bold text-blue-300 text-center mt-1">4 Haneli PIN <span id="uf-pin-hint" class="text-red-400"></span></label><input type="password" id="uf-pin" maxlength="4" class="w-full p-3 text-center tracking-[1em] font-extrabold text-2xl bg-black/50 text-white" placeholder="••••"></div>
    <div id="uf-status-box" class="hidden"><select id="uf-active" class="w-full p-4 font-bold"><option value="true">Aktif</option><option value="false">Pasif</option></select></div>
    <button type="submit" class="btn-3d btn-green w-full py-5">Kaydet</button>
