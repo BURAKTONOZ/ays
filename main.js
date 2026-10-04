@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
 
 let mainWindow;
 
@@ -15,6 +16,7 @@ function createWindow () {
     minHeight: 700,
     frame: false, 
     transparent: true, 
+    icon: path.join(__dirname, 'icon.ico'), // İKON BURADAN ÇEKİLİR
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false 
@@ -22,7 +24,6 @@ function createWindow () {
   });
 
   mainWindow.loadFile('desktop.html');
-
   mainWindow.on('unresponsive', (e) => { e.preventDefault(); });
 }
 
