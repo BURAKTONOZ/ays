@@ -33,7 +33,6 @@ const dbRef = ref(db);
 onValue(dbRef, (snapshot) => {
     const data = snapshot.val() || {};
     
-    // Firebase verilerini global değişkene aktar
     window.DB_DATA.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
     window.DB_DATA.users = data.users ? Object.values(data.users) : [];
     window.DB_DATA.missions = data.missions ? Object.values(data.missions) : [];
@@ -42,14 +41,13 @@ onValue(dbRef, (snapshot) => {
     window.DB_DATA.config = data.config || {};
     window.DB_DATA.globalPass = data.adminPass || "5555";
 
-    // Program ilk kez açılıyorsa: Açılış (Splash) ekranını gizle, giriş ekranını göster
     if (!systemVerified) {
         systemVerified = true;
         const splash = document.getElementById('splash-screen');
         const login = document.getElementById('admin-login-screen');
         
         if (splash) {
-            splash.style.opacity = '0'; // Yumuşak geçiş için
+            splash.style.opacity = '0';
             setTimeout(() => {
                 splash.classList.add('hidden');
                 splash.classList.remove('flex');
@@ -60,12 +58,9 @@ onValue(dbRef, (snapshot) => {
                 }
             }, 500);
         }
-        
-        // Kurum isimlerini güncelle
         if(typeof applySub === 'function') applySub();
         
     } else if (isLoggedIn) {
-        // Zaten giriş yapılmışsa ve veritabanında bir şey değiştiyse ekranı canlı güncelle
         window.renderCurrent();
     }
 }, (error) => {
@@ -89,9 +84,9 @@ const idGen = () => '_' + Math.random().toString(36).slice(2, 11) + Date.now().t
 const plateHtml = (p, size = 'md') => {
     let w = 'w-6', ts = 'text-[8px]', px = 'px-3', py = 'py-1', tSize = 'text-xl';
     if (size === 'sm') { w = 'w-4'; ts = 'text-[6px]'; px = 'px-2'; py = 'py-0.5'; tSize = 'text-sm'; }
-    if (size === 'lg') { w = 'w-8'; ts = 'text-[10px]'; px = 'px-4'; py = 'py-2'; tSize = 'text-3xl'; }
-    if (size === 'xl') { w = 'w-12'; ts = 'text-xs'; px = 'px-6'; py = 'py-3'; tSize = 'text-5xl'; }
-    return `<div class="inline-flex border-[3px] border-[#111827] rounded-lg overflow-hidden bg-white shadow-md shrink-0"><div class="bg-[#0033A0] ${w} flex items-end justify-center pb-0.5"><span class="text-white font-bold ${ts} leading-none">TR</span></div><div class="text-[#111827] font-bold uppercase flex items-center font-[Oswald] ${px} ${py} ${tSize} tracking-widest leading-none">${esc(p)}</div></div>`;
+    if (size === 'lg') { w = 'w-8'; ts = 'text-[10px]'; px = 'px-4'; py = 'py-1.5'; tSize = 'text-3xl'; }
+    if (size === 'xl') { w = 'w-10'; ts = 'text-[11px]'; px = 'px-5'; py = 'py-2'; tSize = 'text-4xl'; } 
+    return `<div class="inline-flex border-2 border-[#111827] rounded-md overflow-hidden bg-white shadow-md shrink-0"><div class="bg-[#0033A0] ${w} flex items-end justify-center pb-1"><span class="text-white font-bold ${ts} leading-none">TR</span></div><div class="text-[#111827] font-bold uppercase flex items-center justify-center font-[Oswald] ${px} ${py} ${tSize} tracking-widest leading-none whitespace-nowrap">${esc(p)}</div></div>`;
 };
 const Utils = { dt: s => { if (!s) return '--'; const d = new Date(s); if (isNaN(d)) return '--'; return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); }, d: s => { if (!s) return '--'; const d = new Date(s); return isNaN(d) ? '--' : d.toLocaleDateString('tr-TR'); }, plate: plateHtml };
 
@@ -359,33 +354,37 @@ window.renderRecords=function(){
 };
 
 window.exportExcel = function() {
- if (typeof XLSX === 'undefined' || !XLSX.utils) {
-    return window.showToast('Excel kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.', 'error');
- }
  const ms=window.getFilteredRecords();
+ if(!ms.length) return window.showToast('İndirilecek kayıt bulunamadı.', 'warning');
  const vs=window.DB_DATA.vehicles;
  const us=window.DB_DATA.users;
- const data = ms.map(x => {
+ 
+ let csv = "Durum,Personel Adi,Arac Plakasi,Gidilen Guzergah,Gorev Amaci,Cikis Tarihi,Donus Tarihi,Cikis KM,Donus KM,Kullanilan KM,Sikayet / Rapor\n";
+ 
+ ms.forEach(x => {
     const v = vs.find(y => y.id === x.vehicleId) || { plate: 'Silinmiş Araç' };
     const u = us.find(y => y.id === x.userId) || { name: 'Silinmiş Personel' };
-    return {
-        "Durum": x.status === 'active' ? 'Sahada' : 'Tamamlandı',
-        "Personel Adı": u.name,
-        "Araç Plakası": v.plate,
-        "Gidilen Güzergah": x.destination,
-        "Görev Amacı": x.purpose || '',
-        "Çıkış Tarihi": x.startTime ? new Date(x.startTime).toLocaleString('tr-TR') : '',
-        "Dönüş Tarihi": x.endTime ? new Date(x.endTime).toLocaleString('tr-TR') : '',
-        "Çıkış KM": x.startKm,
-        "Dönüş KM": x.endKm ?? '',
-        "Kullanılan KM": x.endKm !== undefined ? x.endKm - x.startKm : '',
-        "Şikayet / Rapor": x.returnNote || x.closeNote || ''
-    };
+    
+    const durum = x.status === 'active' ? 'Sahada' : 'Tamamlandi';
+    const st = x.startTime ? new Date(x.startTime).toLocaleString('tr-TR') : '';
+    const en = x.endTime ? new Date(x.endTime).toLocaleString('tr-TR') : '';
+    const fark = x.endKm !== undefined ? (x.endKm - x.startKm) : '';
+    const not = (x.returnNote || x.closeNote || '').replace(/"/g, '""');
+    const dest = (x.destination || '').replace(/"/g, '""');
+    
+    csv += `"${durum}","${u.name}","${v.plate}","${dest}","${x.purpose || ''}","${st}","${en}","${x.startKm}","${x.endKm ?? ''}","${fark}","${not}"\n`;
  });
- const ws = XLSX.utils.json_to_sheet(data);
- const wb = XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(wb, ws, "Gorev Kayitlari");
- XLSX.writeFile(wb, 'Numarataj_Filo_Rapor_' + todayStr() + '.xlsx');
+ 
+ const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+ const link = document.createElement("a");
+ const url = URL.createObjectURL(blob);
+ link.setAttribute("href", url);
+ link.setAttribute("download", 'Numarataj_Filo_Rapor_' + todayStr() + '.csv');
+ link.style.visibility = 'hidden';
+ document.body.appendChild(link);
+ link.click();
+ document.body.removeChild(link);
+ window.showToast('Excel raporu başarıyla indirildi.', 'success');
 };
 
 window.renderSettings=function(){
