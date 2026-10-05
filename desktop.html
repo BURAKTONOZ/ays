@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AYS | Numarataj Araç Filo</title>
 
-<!-- Tasarım ve Kütüphaneler -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -66,7 +65,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 .hbar { height: 9px; border-radius: 99px; background: rgba(0,0,0,0.35); overflow: hidden; }
 .hbar > div { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#2563eb,#60a5fa); transition: width 0.8s; }
 
-/* BASKI EKRANI */
+/* BASKI CSS AYARLARI */
 @media screen { #print-qr-wrapper { display: none; } }
 @media print { 
   html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
@@ -79,7 +78,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
 <div class="app-wrapper relative">
 
- <!-- ÜST BAR -->
+ <!-- ÖZEL ÜST BAR -->
  <div class="h-20 bg-[#040814]/95 w-full border-b border-white/10 flex justify-between items-center px-6 shrink-0 drag-area z-[200]">
   <div class="flex items-center gap-4 no-drag cursor-default">
    <img src="icon.ico" class="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]" alt="Logo" onerror="this.style.display='none'">
@@ -98,6 +97,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   </div>
  </div>
 
+ <!-- GÜVENLİK VE UYARILAR -->
  <div id="system-lock-screen" class="absolute inset-y-20 inset-x-0 z-[110] bg-[#0a0f1f]/95 backdrop-blur-md hidden flex-col items-center justify-center">
   <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]"></i>
   <h1 id="sl-title" class="text-3xl font-black text-white tracking-wider mb-2">SİSTEM KİLİTLİ</h1>
@@ -130,6 +130,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
  <div id="toast-container"></div>
 
+ <!-- YÖNETİCİ ANA EKRANI -->
  <div id="app" class="hidden flex-1 min-h-0 w-full relative">
   <div class="flex w-full h-full">
    
@@ -207,13 +208,14 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      </div>
     </main>
 
+    <!-- SAĞ ALT İMZA -->
     <div class="absolute bottom-4 right-6 text-[10px] text-gray-500/50 font-black tracking-[0.2em] pointer-events-none z-[9999] selection:bg-transparent">© 2026 TONOZ</div>
    </div>
   </div>
  </div>
 </div>
 
-<!-- ================= YÖNETİCİ MODALLARI (BUZLU CAM) ================= -->
+<!-- ================= MODALLAR (BUZLU CAM) ================= -->
 <div id="modal-overlay" class="fixed inset-0 bg-[#030612]/60 backdrop-blur-sm z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  
  <!-- ONAY PENCERESİ -->
