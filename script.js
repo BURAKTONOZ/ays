@@ -1,5 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+const { initializeApp } = require("firebase/app");
+const { getDatabase, ref, onValue, update, set, remove } = require("firebase/database");
+const { ipcRenderer } = require("electron");
 
 // ================= 1. TEMEL AYARLAR VE GLOBAL DEĞİŞKENLER ================= //
 const APP_VERSION = "1.0.0";
@@ -23,12 +24,55 @@ let closeTimeout = null;
 let returnToDetail = null;
 
 // ================= 2. ELECTRON KÖPRÜSÜ (Üst Bar Butonları) ================= //
-if (window.require) {
-    const ipcRenderer = window.require('electron').ipcRenderer;
-    document.getElementById('win-min')?.addEventListener('click', () => ipcRenderer.send('window-minimize'));
-    document.getElementById('win-max')?.addEventListener('click', () => ipcRenderer.send('window-maximize'));
-    document.getElementById('win-close')?.addEventListener('click', () => ipcRenderer.send('window-close'));
-}
+document.getElementById('win-min')?.addEventListener('click', () => ipcRenderer.send('window-minimize'));
+document.getElementById('win-max')?.addEventListener('click', () => ipcRenderer.send('window-maximize'));
+document.getElementById('win-close')?.addEventListener('click', () => ipcRenderer.send('window-close'));
+
+// ================= 2.5 VERİTABANI DİNLEYİCİSİ (EKSİK OLAN ANA DÖNGÜ) ================= //
+const dbRef = ref(db);
+onValue(dbRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    
+    // Firebase verilerini global değişkene aktar
+    window.DB_DATA.vehicles = data.vehicles ? Object.values(data.vehicles) : [];
+    window.DB_DATA.users = data.users ? Object.values(data.users) : [];
+    window.DB_DATA.missions = data.missions ? Object.values(data.missions) : [];
+    window.DB_DATA.purposes = data.purposes || ['GÖREV', 'ŞANTİYE', 'EVRAK'];
+    window.DB_DATA.maints = data.maints ? Object.values(data.maints) : [];
+    window.DB_DATA.config = data.config || {};
+    window.DB_DATA.globalPass = data.adminPass || "5555";
+
+    // Program ilk kez açılıyorsa: Açılış (Splash) ekranını gizle, giriş ekranını göster
+    if (!systemVerified) {
+        systemVerified = true;
+        const splash = document.getElementById('splash-screen');
+        const login = document.getElementById('admin-login-screen');
+        
+        if (splash) {
+            splash.style.opacity = '0'; // Yumuşak geçiş için
+            setTimeout(() => {
+                splash.classList.add('hidden');
+                splash.classList.remove('flex');
+                
+                if (login && !isLoggedIn) {
+                    login.classList.remove('hidden');
+                    login.classList.add('flex');
+                }
+            }, 500);
+        }
+        
+        // Kurum isimlerini güncelle
+        if(typeof applySub === 'function') applySub();
+        
+    } else if (isLoggedIn) {
+        // Zaten giriş yapılmışsa ve veritabanında bir şey değiştiyse ekranı canlı güncelle
+        window.renderCurrent();
+    }
+}, (error) => {
+    console.error("Firebase Bağlantı Hatası:", error);
+    const st = document.getElementById('splash-text');
+    if (st) st.innerText = 'Bağlantı Hatası: Lütfen internet bağlantınızı kontrol edin.';
+});
 
 // ================= 3. YARDIMCI FONKSİYONLAR ================= //
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -530,12 +574,11 @@ window.openInspForm=function(vid,fromDetail){
 };
 
 // ================= 7. FORM İŞLEM (SUBMIT) VE BAĞLAMA EVENTLERİ ================= //
-// Modül yüklendiğinde butonların sayfayı yenilemesini fiziksel olarak durdurur ve kaydeder.
 const attachFormListener = (id, callback) => {
     const form = document.getElementById(id);
     if(form) {
         form.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Sayfa yenilenmesini GARANTİ engeller
+            e.preventDefault(); 
             await callback(e);
         });
     }
