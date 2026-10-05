@@ -28,7 +28,7 @@ document.getElementById('win-min')?.addEventListener('click', () => ipcRenderer.
 document.getElementById('win-max')?.addEventListener('click', () => ipcRenderer.send('window-maximize'));
 document.getElementById('win-close')?.addEventListener('click', () => ipcRenderer.send('window-close'));
 
-// ================= 2.5 VERİTABANI DİNLEYİCİSİ (EKSİK OLAN ANA DÖNGÜ) ================= //
+// ================= 2.5 VERİTABANI DİNLEYİCİSİ (ANA DÖNGÜ VE KONTROLLER) ================= //
 const dbRef = ref(db);
 onValue(dbRef, (snapshot) => {
     const data = snapshot.val() || {};
@@ -40,6 +40,33 @@ onValue(dbRef, (snapshot) => {
     window.DB_DATA.maints = data.maints ? Object.values(data.maints) : [];
     window.DB_DATA.config = data.config || {};
     window.DB_DATA.globalPass = data.adminPass || "5555";
+
+    const cfg = window.DB_DATA.config;
+    const lockScreen = document.getElementById('system-lock-screen');
+    
+    // 1. Sistem Aktiflik Kontrolü
+    if (cfg.isActive === false) {
+        document.getElementById('sl-title').innerText = "SİSTEM KAPALI";
+        document.getElementById('sl-msg').innerHTML = cfg.lockMessage || "Sistem yöneticisi tarafından geçici olarak erişime kapatılmıştır.";
+        lockScreen.classList.remove('hidden');
+        lockScreen.classList.add('flex');
+        return; 
+    }
+    
+    // 2. Versiyon Kontrolü
+    if (cfg.version && cfg.version !== APP_VERSION) {
+        document.getElementById('sl-title').innerText = "GÜNCELLEME GEREKLİ";
+        document.getElementById('sl-msg').innerHTML = `Mevcut sürümünüz (v${APP_VERSION}) eskimiştir.<br>Lütfen güncel (v${cfg.version}) versiyonu indirip kurun.`;
+        lockScreen.classList.remove('hidden');
+        lockScreen.classList.add('flex');
+        return; 
+    }
+    
+    // Kontrollerden geçildiyse kilit ekranını gizle (canlı olarak tekrar açıldıysa düzeltir)
+    if (lockScreen) {
+        lockScreen.classList.add('hidden');
+        lockScreen.classList.remove('flex');
+    }
 
     if (!systemVerified) {
         systemVerified = true;
