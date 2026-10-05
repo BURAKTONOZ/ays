@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+// Hata Korumalı Dinleyici (Sayfada element yoksa çökmez)
 const listen = (id, event, callback) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(event, callback);
@@ -28,13 +29,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// GLOBAL DEĞİŞKENLER VE EKSİK OLAN curVid TANIMLAMASI
 window.DB_DATA = { vehicles: [], users: [], missions: [], purposes: [], maints: [], config: {}, globalPass: "5555" };
 let isLoggedIn = false;
 let currentTab = 'dash';
 let initialLoadCount = 0;
 let systemVerified = false;
+let curVid = null; // Araç detaylarını hafızada tutan değişken (Ekendi)
 
-// KÖK DİZİN
+// KÖK DİZİN VERİ DİNLEYİCİLERİ
 onValue(ref(db, 'adminPass'), snap => {
     window.DB_DATA.globalPass = snap.val() !== null ? String(snap.val()).trim() : "5555";
 });
@@ -73,7 +76,7 @@ function checkInitialLoad() {
     }
 }
 
-// BÜYÜK VERİLERİ AYRI DİNLİYORUZ
+// BÜYÜK VERİLERİ (Tabloları) AYRI DİNLİYORUZ
 onValue(ref(db, 'vehicles'), snap => { const d = snap.val()||{}; window.DB_DATA.vehicles = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 onValue(ref(db, 'users'), snap => { const d = snap.val()||{}; window.DB_DATA.users = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 onValue(ref(db, 'missions'), snap => { const d = snap.val()||{}; window.DB_DATA.missions = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
@@ -108,7 +111,7 @@ listen('form-admin-login', 'submit', (e) => {
     }
 });
 
-/* ================= YARDIMCILAR VE ESNEMEYEN YENİ PLAKA TASARIMI ================= */
+/* ================= YARDIMCILAR ================= */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
 const hashPin=(p,salt)=>H('nmr|'+salt+'|'+p);
@@ -120,7 +123,6 @@ const todayStr=()=>new Date(new Date().getTime() - new Date().getTimezoneOffset(
 const monthKey=iso=>{const d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 const idGen=()=>'_'+Math.random().toString(36).slice(2,11)+Date.now().toString(36).slice(-4);
 
-// YENİ: Plakalar artık CSS Scale ile değil, gerçek boyutlarıyla çizilir (Üst üste binmeyi engeller)
 const plateHtml = (p, size = 'md') => {
     let w = 'w-6', ts = 'text-[8px]', px = 'px-3', py = 'py-1', tSize = 'text-xl';
     if(size === 'sm') { w = 'w-4'; ts = 'text-[6px]'; px = 'px-2'; py = 'py-0.5'; tSize = 'text-sm'; }
@@ -183,7 +185,7 @@ function updateClock(){
 }
 setInterval(updateClock,30000); updateClock();
 
-/* ================= MODAL MERKEZLEME ================= */
+/* ================= MODAL MERKEZLEME VE FLU ARKAPLAN ================= */
 const overlay=document.getElementById('modal-overlay');let closeTimeout=null;
 window.openModal=function(id){
  clearTimeout(closeTimeout);
@@ -199,6 +201,46 @@ window.closeModal=function(){
  },300);
 };
 document.querySelectorAll('.modal-close').forEach(b=>b.addEventListener('click',window.closeModal));
+
+/* ================= MODAL AÇILIŞ FONKSİYONLARI (EKSİKLER GİDERİLDİ) ================= */
+window.openVehicleForm = function(id=null){
+ document.getElementById('form-vehicle').reset();
+ const p=document.getElementById('vf-img-preview');p.classList.add('hidden');p.src='';
+ document.getElementById('vf-img-base64').value='';
+ document.getElementById('vf-img-label').innerHTML='<i class="fa-solid fa-camera text-3xl text-blue-400 block mb-2"></i>Fotoğrafı Değiştir';
+ const sb=document.getElementById('vf-status-box');
+ if(id){
+  document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-pen-to-square mr-3 text-blue-500"></i>Araç Düzenle';
+  const v=vehicleById(id);document.getElementById('vf-id').value=v.id;
+  ['plate','model','vin','year','color','fuel','km','ins','notes'].forEach(k=>{const el=document.getElementById('vf-'+k);if(el&&v[k]!==undefined)el.value=v[k]});
+  document.getElementById('vf-lastkm').value=v.lastMaintKm??'';document.getElementById('vf-lastdate').value=v.lastMaintDate||'';
+  if(v.image){document.getElementById('vf-img-base64').value=v.image;p.src=v.image;p.classList.remove('hidden');document.getElementById('vf-img-label').innerText='Değiştir'}
+  if(sb){ sb.classList.remove('hidden');const ss=document.getElementById('vf-status');ss.value=v.status==='maintenance'?'maintenance':'available';ss.disabled=v.status==='busy';}
+ }else{
+  document.getElementById('vf-title').innerHTML='<i class="fa-solid fa-plus-circle mr-3 text-green-500"></i>Yeni Araç Ekle';
+  document.getElementById('vf-id').value='';
+  if(sb) sb.classList.add('hidden');
+ }
+ window.openModal('modal-vehicle-form');
+};
+
+let returnToDetail=null;
+window.openMaintForm=function(vid,fromDetail){
+ const v=vehicleById(vid);if(!v)return; returnToDetail=fromDetail?vid:null; document.getElementById('form-maint').reset();
+ document.getElementById('mt-vid').value=vid;document.getElementById('mt-plate').innerHTML=Utils.plate(v.plate, 'md');
+ document.getElementById('mt-date').value=todayStr();document.getElementById('mt-km').value=v.km; document.getElementById('mt-reset').checked=true; window.openModal('modal-maint');
+};
+
+window.openInspForm=function(vid,fromDetail){
+ const v=vehicleById(vid);if(!v)return; returnToDetail=fromDetail?vid:null; document.getElementById('form-insp').reset();
+ document.getElementById('mi-vid').value=vid;document.getElementById('mi-plate').innerHTML=Utils.plate(v.plate, 'md'); window.openModal('modal-insp');
+};
+
+window.openResolveModal=function(mid){
+ document.getElementById('rn-mid').value=mid;
+ document.getElementById('rn-text').value='';
+ window.openModal('modal-resolve-note');
+};
 
 /* ================= TAB SİSTEMİ ================= */
 const TITLES={dash:'Dashboard',records:'Görev Kayıtları',fleet:'Filo Yönetimi',users:'Personel Yönetimi',settings:'Ayarlar'};
@@ -263,19 +305,20 @@ function lineChart(pts){
  return`<svg viewBox="0 0 ${W} ${Hh}" class="w-full drop-shadow-md"><defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".4"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${grid}<polygon points="${area}" fill="url(#lg2)"/><polyline points="${line}" fill="none" stroke="#22c55e" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
 }
 
-// UYARI KARTLARI DÜZENLENDİ (KÜÇÜLTÜNCE PLAKA KÜÇÜLMEZ)
 function alertCard(color,icon,title,plateHtml,extra,btn){
  return `
- <div class="bg-${color}/10 border-l-4 border-${color} p-4 rounded-xl flex flex-col gap-3 hover:bg-${color}/20 transition">
-    <div class="flex items-center gap-2">
-        <i class="fa-solid ${icon} text-${color} text-lg"></i>
-        <span class="font-extrabold text-sm text-${color} uppercase tracking-wider">${title}</span>
+ <div class="bg-${color}/10 border-l-4 border-${color} p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-${color}/20 transition">
+    <div class="flex-1 min-w-0 w-full">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid ${icon} text-${color} text-lg"></i>
+            <span class="font-extrabold text-sm text-${color} uppercase tracking-wider">${title}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            ${plateHtml}
+            <span class="text-sm font-bold text-gray-200">${extra}</span>
+        </div>
     </div>
-    <div class="flex flex-wrap items-center gap-3">
-        ${plateHtml}
-        <span class="text-sm font-bold text-gray-200">${extra}</span>
-    </div>
-    <div class="w-full mt-1">${btn||''}</div>
+    <div class="w-full sm:w-auto mt-1">${btn||''}</div>
  </div>`;
 }
 
@@ -358,7 +401,6 @@ window.getFilteredRecords = function() {
  return vid?ms.sort((a,b)=>b.startKm-a.startKm):ms.sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
 };
 
-/* YENİ EXCEL EXPORT ÖZELLİĞİ */
 window.exportExcel = function() {
  if (typeof XLSX === 'undefined') {
     return window.showToast('Excel kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.', 'error');
@@ -442,7 +484,6 @@ window.renderRecords=function(){
  }
 };
 
-/* YENİ GÖREV SİLME ÖZELLİĞİ */
 window.deleteRecord=async function(id){
  if(!(await window.customConfirm('DİKKAT: Bu görev kaydını tamamen silmek istediğinize emin misiniz? <br><br><span class="text-red-400">Bu işlem geri alınamaz ve geçmiş raporları etkiler!</span>'))) return;
  try { await remove(ref(db, 'missions/'+id)); window.showToast('Görev kaydı sistemden silindi.','success'); window.renderCurrent(); } catch(e) { window.showToast('Silinemedi','error');}
@@ -463,11 +504,54 @@ window.renderSettings=function(){
 
 function applySub(){const s=window.DB_DATA.config.sub||'Numarataj Şube Müdürlüğü';document.querySelectorAll('#hdr-org').forEach(e=>e.innerText=s)}
 
-window.openResolveModal=function(mid){
- document.getElementById('rn-mid').value=mid;
- document.getElementById('rn-text').value='';
- window.openModal('modal-resolve-note');
-};
+/* ================= HATA ÇÖZÜMÜ: YENİ FORM AÇILIŞ DİNLEYİCİLERİ ================= */
+// Önceden unuttuğum ve çökmeye yol açan fonksiyonlar eklendi
+
+listen('form-resolve-note', 'submit', async e=>{
+ e.preventDefault(); const mid = document.getElementById('rn-mid').value;
+ try { await update(ref(db, 'missions/'+mid), {noteResolved:true, resolveNote:document.getElementById('rn-text').value.trim(), resolveDate:new Date().toISOString()}); window.showToast('Rapor başarıyla kaydedildi.','success');window.closeModal(); } catch(err) { window.showToast('Bağlantı hatası.','error'); }
+});
+
+listen('mt-type', 'change', e=>{
+    const r = document.getElementById('mt-reset'); 
+    if(r) r.checked = ['Yağ Bakımı','Periyodik Bakım'].includes(e.target.value);
+});
+
+listen('form-maint', 'submit', async e=>{
+ e.preventDefault();
+ const vid=document.getElementById('mt-vid').value,v=vehicleById(vid);if(!v)return;
+ const date=document.getElementById('mt-date').value,km=parseInt(document.getElementById('mt-km').value);
+ const r = document.getElementById('mt-reset');
+ const reset = r ? r.checked : false;
+
+ if(!date||isNaN(km))return window.showToast('Tarih ve KM alanları zorunludur.','error');
+ if(date>todayStr())return window.showToast('Gelecek tarihli bakım girilemez.','error');
+ if(km>v.km)return window.showToast('Uyarı: Bakım KM değeri aracın güncel KM değerinden yüksek. Önce aracın KM\'sini güncelleyin.','error');
+ 
+ const mId = idGen(); const updates = {};
+ updates['/maints/'+mId] = {id:mId,vehicleId:vid,kind:'bakim',type:document.getElementById('mt-type').value,date,km,note:document.getElementById('mt-note').value.trim(),created:new Date().toISOString()};
+ 
+ if(reset&&(v.lastMaintKm===undefined||v.lastMaintKm===null||km>=v.lastMaintKm)){ 
+     updates['/vehicles/'+vid+'/lastMaintKm'] = km; 
+     updates['/vehicles/'+vid+'/lastMaintDate'] = date; 
+ }
+ 
+ try { 
+     await update(ref(db), updates); 
+     window.showToast('Bakım kaydı başarıyla oluşturuldu.','success'); 
+     if(returnToDetail){const id=returnToDetail;returnToDetail=null;window.openVehicleDetail(id,'maint')}else{window.closeModal()} 
+ } catch(err) { window.showToast('Hata.','error'); }
+});
+
+listen('form-insp', 'submit', async e=>{
+ e.preventDefault(); const vid=document.getElementById('mi-vid').value,v=vehicleById(vid);if(!v)return;
+ const nd=document.getElementById('mi-date').value, note=document.getElementById('mi-note').value.trim();
+ if(!nd||nd<todayStr())return window.showToast('Yeni bitiş tarihi bugünden geçmiş olamaz.','error');
+ const mId=idGen(); const updates = {};
+ updates['/maints/'+mId] = {id:mId,vehicleId:vid,kind:'muayene',type:'TÜVTÜRK Muayene Yenileme',date:todayStr(),km:v.km,note:'Yeni Bitiş: '+Utils.d(nd+'T12:00:00')+(note?' – '+note:''),created:new Date().toISOString()};
+ updates['/vehicles/'+vid+'/ins'] = nd;
+ try { await update(ref(db), updates); window.showToast('Muayene tarihi başarıyla güncellendi.','success'); if(returnToDetail){const id=returnToDetail;returnToDetail=null;window.openVehicleDetail(id,'info')}else{window.closeModal()} } catch(err) { window.showToast('Hata.','error'); }
+});
 
 listen('vf-img-file', 'change', e=>{
  const file=e.target.files[0];if(!file)return;const r=new FileReader();
@@ -571,19 +655,6 @@ window.printQR=function(){
  setTimeout(()=>window.print(),100);
 };
 
-window.openManualMissionForm=function(){
- document.getElementById('form-manual-mission').reset();
- document.getElementById('mm-user').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.users.filter(u=>!u.isDeleted).map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
- document.getElementById('mm-vehicle').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.vehicles.filter(v=>!v.isDeleted).map(v=>`<option value="${esc(v.id)}">${esc(v.plate)} - ${esc(v.model)}</option>`).join('');
- window.populatePurposes('mm-purpose');
- window.openModal('modal-manual-mission');
-};
-
-window.updateManualVehicleKm=function(){
- const v=vehicleById(document.getElementById('mm-vehicle').value);
- document.getElementById('mm-start-km').value=v?v.km:'';
-};
-
 listen('form-manual-mission', 'submit', async e=>{
  e.preventDefault();
  const uid=document.getElementById('mm-user').value,vid=document.getElementById('mm-vehicle').value;
@@ -603,27 +674,6 @@ listen('form-manual-mission', 'submit', async e=>{
 });
 
 /* GENİŞLETİLMİŞ GÖREV DÜZENLEME FORMU KODU */
-window.openRecordEdit=function(id){
- const m=window.DB_DATA.missions.find(m=>m.id===id);if(!m)return;
- const a=m.status==='active';
- document.getElementById('rf-id').value=id;document.getElementById('rf-mode').value=a?'close':'edit';
- document.getElementById('rf-title').innerHTML=a?'<i class="fa-solid fa-lock text-red-500 mr-2"></i>Görevi Yönetici Olarak Kapat':'<i class="fa-solid fa-pen mr-2"></i>Görev Kaydını Düzenle';
- const info = document.getElementById('rf-info'); if(info) info.innerHTML=a?'Sahada takılı kalmış görevi sistemden <b>zorla</b> kapatır. Lütfen dönüş kilometre ve saatini girin.':'Buradan yapılan düzeltmeler aracın güncel KM ve görev geçmişini otomatik düzenler.';
- document.getElementById('rf-btn').innerText=a?'Görevi Kapat':'Kaydı Güncelle';
- document.getElementById('rf-btn').className=a?'btn-3d btn-red w-full py-4 text-lg mt-2':'btn-3d btn-yellow w-full py-4 text-lg mt-2';
- 
- document.getElementById('rf-usr').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.users.map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
- document.getElementById('rf-veh').innerHTML='<option value="">Seçiniz...</option>'+window.DB_DATA.vehicles.map(v=>`<option value="${esc(v.id)}">${esc(v.plate)}</option>`).join('');
- document.getElementById('rf-usr').value = m.userId; document.getElementById('rf-veh').value = m.vehicleId;
- 
- const formatDT = (iso) => iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
- document.getElementById('rf-st').value = formatDT(m.startTime); document.getElementById('rf-en').value = a ? formatDT(new Date().toISOString()) : formatDT(m.endTime);
- document.getElementById('rf-skm').value=m.startKm; document.getElementById('rf-ekm').value=a?'':(m.endKm !== undefined ? m.endKm : '');
- 
- document.getElementById('rf-usr').disabled = a; document.getElementById('rf-veh').disabled = a; document.getElementById('rf-st').disabled = a;
- window.openModal('modal-record-edit');
-};
-
 listen('form-record', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('rf-id').value, mode=document.getElementById('rf-mode').value;
@@ -661,23 +711,6 @@ listen('form-record', 'submit', async e=>{
  } catch (err) { window.showToast('Hata oluştu.','error'); }
 });
 
-/* ================= AYAR VE KAYIT SİLME ================= */
-window.openUserForm=function(id=null){
- document.getElementById('form-user').reset();const sb=document.getElementById('uf-status-box'),pin=document.getElementById('uf-pin');
- if(id){
-  const u=userById(id);document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-pen mr-3 text-blue-400"></i>Personel Düzenle';document.getElementById('uf-id').value=u.id;
-  document.getElementById('uf-name').value=u.name;document.getElementById('uf-sicil').value=u.sicil||'';document.getElementById('uf-phone').value=u.phone||'';document.getElementById('uf-lic').value=u.licenseClass||'';
-  pin.required=false;
-  const ph=document.getElementById('uf-pin-hint'); if(ph) ph.innerText='(Değiştirmek istemiyorsanız boş bırakın)';
-  if(sb){ sb.classList.remove('hidden');document.getElementById('uf-active').value=u.isActive!==false?'true':'false';}
- }else{
-  document.getElementById('uf-title').innerHTML='<i class="fa-solid fa-user-plus mr-3 text-green-400"></i>Yeni Personel Ekle';document.getElementById('uf-id').value='';pin.required=true;
-  const ph=document.getElementById('uf-pin-hint'); if(ph) ph.innerText='* Zorunlu';
-  if(sb) sb.classList.add('hidden');
- }
- window.openModal('modal-user-form');
-};
-
 listen('form-user', 'submit', async e=>{
  e.preventDefault();
  const id=document.getElementById('uf-id').value,pin=document.getElementById('uf-pin').value;
@@ -689,33 +722,22 @@ listen('form-user', 'submit', async e=>{
  try { await set(ref(db, 'users/'+newId), {...(id?userById(id):{}), ...d}); window.showToast('Personel bilgileri kaydedildi.','success');window.closeModal(); window.renderCurrent(); } catch(err) { window.showToast('Kayıt hatası.','error'); }
 });
 
-window.deleteUser=async function(id){
- if(activeMissionOfUser(id))return window.showToast('Hata: Bu personelin üzerinde şu an kapanmamış bir görev var. Önce görevi sonlandırın.','error');
- if(!(await window.customConfirm('DİKKAT: Personeli sistemden silmek istediğinize emin misiniz?'))) return;
- try { await update(ref(db, 'users/'+id), {isDeleted:true}); window.showToast('Personel silindi.','success'); window.renderCurrent(); } catch(e) { window.showToast('Silinemedi','error');}
-};
-
 listen('form-maint-cfg', 'submit', async e=>{
  e.preventDefault(); try { await update(ref(db, 'config'), { maintInterval:parseInt(document.getElementById('cfg-interval').value), maintWarn:parseInt(document.getElementById('cfg-warn').value), maintMonths:parseInt(document.getElementById('cfg-months').value) }); window.showToast('Bakım periyot ayarları kaydedildi.','success'); } catch(e) { window.showToast('Kaydedilemedi.','error');}
 });
+
 listen('form-add-purpose', 'submit', async e=>{
  e.preventDefault();const inp=document.getElementById('new-purpose-name'),v=inp.value.trim();if(!v)return;
  const ps=window.DB_DATA.purposes;if(ps.some(p=>p.toLowerCase()===v.toLowerCase()))return window.showToast('Bu kategori listede zaten var.','warning');
  try { await set(ref(db, 'purposes'), [...ps, v]); inp.value=''; } catch(e) { window.showToast('Eklenemedi.','error');}
 });
 
-/* SİLME ONAYLI KATEGORİ */
-window.deletePurpose=async function(i){
- const ps=window.DB_DATA.purposes;if(ps.length<=1)return window.showToast('En az bir adet görev amacı kalmalıdır.','error');
- if(!(await window.customConfirm(`"${ps[i]}" kategorisini kalıcı olarak silmek istediğinize emin misiniz?`))) return;
- ps.splice(i,1); try { await set(ref(db, 'purposes'), ps); window.renderSettings(); } catch(e) { window.showToast('Silinemedi','error'); }
-};
-
 listen('form-config', 'submit', async e=>{
  e.preventDefault();const url=document.getElementById('cfg-url').value.trim();
  if(url&&!/^https?:\/\//i.test(url))return window.showToast('Adres http:// veya https:// ile başlamalıdır.','error');
  try { await update(ref(db, 'config'), { org:document.getElementById('cfg-org').value.trim(), sub:document.getElementById('cfg-sub').value.trim(), baseUrl:url }); window.showToast('Kurum ve QR ayarları kaydedildi.','success'); } catch(e) { window.showToast('Hata.','error');}
 });
+
 listen('form-admin-pw', 'submit', async e=>{
   e.preventDefault();
   const dbPass = window.DB_DATA.globalPass;
