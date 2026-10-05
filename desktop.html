@@ -63,8 +63,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 .badge-mission { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.5); color: #7dd3fc; }
 .badge-warning { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.5); color: #fcd34d; }
 .badge-danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); color: #fca5a5; }
-.hbar { height: 9px; border-radius: 99px; background: rgba(0,0,0,0.35); overflow: hidden; }
-.hbar > div { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#2563eb,#60a5fa); transition: width 0.8s; }
 
 /* GRAFİK, KART VE İSTATİSTİK CSS'LERİ */
 .stat { position: relative; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
@@ -119,7 +117,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   </div>
   <h1 class="text-white font-extrabold tracking-widest text-2xl mb-1">NUMARATAJ FİLO</h1>
   <p class="text-blue-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Yönetim Paneli</p>
-  <p class="text-textmuted text-sm mt-6" id="splash-text">Veritabanı Güvenlik Kontrolleri Yapılıyor...</p>
+  <p class="text-textmuted text-sm mt-6" id="splash-text">Veritabanı Bağlantısı Bekleniyor...</p>
  </div>
 
  <!-- LOGIN EKRANI -->
@@ -217,7 +215,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      </div>
     </main>
 
-    <!-- SAĞ ALT İMZA -->
     <div class="absolute bottom-4 right-6 text-[10px] text-gray-500/50 font-black tracking-[0.2em] pointer-events-none z-[9999] selection:bg-transparent">© 2026 TONOZ</div>
    </div>
   </div>
@@ -300,17 +297,17 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      <input type="hidden" id="vf-img-base64">
    </div>
    <div class="grid sm:grid-cols-2 gap-5">
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" maxlength="12" class="w-full p-4 uppercase font-extrabold text-xl text-center" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" maxlength="40" class="w-full p-4 font-bold" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Güncel KM *</label><input type="number" id="vf-km" class="w-full p-4 font-extrabold text-xl text-blue-400 bg-blue-900/10 text-center" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Yakıt</label><select id="vf-fuel" class="w-full p-4"><option>Dizel</option><option>Benzin</option><option>Elektrik</option></select></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Model Yılı</label><input type="number" id="vf-year" class="w-full p-4" placeholder="2020"></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Renk</label><input type="text" id="vf-color" class="w-full p-4" placeholder="Beyaz"></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Şasi No (VIN)</label><input type="text" id="vf-vin" class="w-full p-4 font-mono"></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Muayene Bitiş</label><input type="date" id="vf-ins" class="w-full p-4"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" maxlength="12" class="w-full p-3 uppercase font-extrabold text-xl text-center" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" maxlength="40" class="w-full p-3 font-bold" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Güncel KM *</label><input type="number" id="vf-km" class="w-full p-3 font-extrabold text-xl text-blue-400 bg-blue-900/10 text-center" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Yakıt</label><select id="vf-fuel" class="w-full p-3"><option>Dizel</option><option>Benzin</option><option>Elektrik</option></select></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Model Yılı</label><input type="number" id="vf-year" class="w-full p-3" placeholder="2020"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Renk</label><input type="text" id="vf-color" class="w-full p-3" placeholder="Beyaz"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Şasi No (VIN)</label><input type="text" id="vf-vin" class="w-full p-3 font-mono"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Muayene Bitiş</label><input type="date" id="vf-ins" class="w-full p-3"></div>
     <div class="sm:col-span-2 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5"><p class="text-sm font-extrabold text-yellow-400 mb-2">Son Bakım Bilgisi (Sisteme Giriş Öncesi)</p><div class="grid sm:grid-cols-2 gap-4"><input type="number" id="vf-lastkm" class="p-4 bg-black/40" placeholder="Son bakım KM"><input type="date" id="vf-lastdate" class="p-4 bg-black/40"></div></div>
-    <div id="vf-status-box" class="hidden sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Durum</label><select id="vf-status" class="w-full p-4 font-bold"><option value="available">Müsait</option><option value="maintenance">Sanayide</option></select></div>
-    <div class="sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Yönetici Notu</label><textarea id="vf-notes" class="w-full p-4" rows="2"></textarea></div>
+    <div id="vf-status-box" class="hidden sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Durum</label><select id="vf-status" class="w-full p-3 font-bold"><option value="available">Müsait</option><option value="maintenance">Sanayide</option></select></div>
+    <div class="sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Yönetici Notu</label><textarea id="vf-notes" class="w-full p-3" rows="2"></textarea></div>
    </div>
    <button type="submit" class="btn-3d btn-green w-full py-5 text-lg"><i class="fa-solid fa-floppy-disk mr-2"></i>Kaydet</button>
   </form>
