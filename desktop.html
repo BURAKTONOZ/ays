@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AYS | Numarataj Araç Filo</title>
 
+<!-- Tasarım ve Kütüphaneler -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -24,7 +25,7 @@ html, body { height: 100%; overflow: hidden; background-color: transparent; }
 .bar { background: rgba(10,15,31,0.88); border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
 .side { background: linear-gradient(180deg, rgba(15,22,48,0.95), rgba(10,15,31,0.98)); border-right: 1px solid rgba(255,255,255,0.08); }
 .glass-modal { background: #0f152e; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
-input, select, textarea { background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(147,160,196,0.2) !important; color: #e8ecf8 !important; border-radius: 12px; font-size: 16px !important; }
+input, select, textarea { background: rgba(0,0,0,0.3); border: 1px solid rgba(147,160,196,0.2); color: #e8ecf8; border-radius: 12px; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
 option { background: #0f152e; color: #e8ecf8; }
 .btn-3d { font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 10px; color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
@@ -65,7 +66,13 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 .hbar { height: 9px; border-radius: 99px; background: rgba(0,0,0,0.35); overflow: hidden; }
 .hbar > div { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#2563eb,#60a5fa); transition: width 0.8s; }
 
-/* BASKI CSS AYARLARI */
+/* EKSİK OLAN CSS SINIFLARI (Grafikler ve İstatistik Kartları İçin) */
+.stat { position: relative; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+.stat:hover { transform: translateY(-3px); }
+.stat .ico { position: absolute; right: 14px; top: 14px; font-size: 2.2rem; opacity: 0.2; }
+.ch-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #93a0c4; margin-bottom: 12px; }
+
+/* BASKI EKRANI */
 @media screen { #print-qr-wrapper { display: none; } }
 @media print { 
   html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
@@ -105,15 +112,17 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   <button onclick="location.reload()" class="mt-8 text-blue-400 text-sm font-bold no-drag hover:text-blue-300 underline"><i class="fa-solid fa-rotate-right mr-2"></i>Tekrar Dene</button>
  </div>
 
+ <!-- SPLASH EKRANI -->
  <div id="splash-screen" class="absolute inset-y-20 inset-x-0 z-[100] bg-[#0a0f1f] flex flex-col items-center justify-center transition-opacity duration-500 rounded-b-[20px]">
   <div class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-3xl flex items-center justify-center animate-splash mb-8 border border-blue-400/30">
     <i class="fa-solid fa-shield-halved text-5xl text-white"></i>
   </div>
   <h1 class="text-white font-extrabold tracking-widest text-2xl mb-1">NUMARATAJ FİLO</h1>
   <p class="text-blue-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Yönetim Paneli</p>
-  <p class="text-textmuted text-sm mt-6" id="splash-text">Veritabanı Güvenlik Kontrolleri Yapılıyor...</p>
+  <p class="text-textmuted text-sm mt-6" id="splash-text">Veritabanı Bağlantısı Bekleniyor...</p>
  </div>
 
+ <!-- LOGIN EKRANI -->
  <div id="admin-login-screen" class="absolute inset-y-20 inset-x-0 z-[90] bg-[#030612]/80 backdrop-blur-sm hidden items-center justify-center p-4 rounded-b-[20px]">
   <div class="glass-modal w-full max-w-sm flex flex-col pop-in border-blue-500/30 border-2">
    <div class="p-6 border-b border-white/10 flex flex-col items-center text-center">
@@ -168,10 +177,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      <!-- DASHBOARD -->
      <div id="admin-dash" class="space-y-6 w-full">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-       <div onclick="window.filterDashboard('all')" class="stat glass p-6 border-b-4 border-b-gray-400"><i class="ico fa-solid fa-layer-group text-gray-400"></i><p class="text-xs font-bold text-textmuted uppercase tracking-wider">Toplam Araç</p><h3 id="dash-tot-veh" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
-       <div onclick="window.filterDashboard('busy')" class="stat glass p-6 border-b-4 border-b-mission"><i class="ico fa-solid fa-route text-mission"></i><p class="text-xs font-bold text-mission uppercase tracking-wider">Sahada</p><h3 id="dash-act-mis" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
-       <div onclick="window.filterDashboard('available')" class="stat glass p-6 border-b-4 border-b-success"><i class="ico fa-solid fa-square-parking text-success"></i><p class="text-xs font-bold text-success uppercase tracking-wider">Garajda</p><h3 id="dash-avl-veh" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
-       <div onclick="window.filterDashboard('maintenance')" class="stat glass p-6 border-b-4 border-b-warning"><i class="ico fa-solid fa-wrench text-warning"></i><p class="text-xs font-bold text-warning uppercase tracking-wider">Sanayide</p><h3 id="dash-mnt-veh" class="text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('all')" class="stat glass p-6 border-b-4 border-b-gray-400"><i class="ico fa-solid fa-layer-group text-gray-400"></i><p class="text-xs font-bold text-textmuted uppercase tracking-wider">Toplam Araç</p><h3 id="dash-tot-veh" class="text-3xl lg:text-4xl xl:text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('busy')" class="stat glass p-6 border-b-4 border-b-mission"><i class="ico fa-solid fa-route text-mission"></i><p class="text-xs font-bold text-mission uppercase tracking-wider">Sahada</p><h3 id="dash-act-mis" class="text-3xl lg:text-4xl xl:text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('available')" class="stat glass p-6 border-b-4 border-b-success"><i class="ico fa-solid fa-square-parking text-success"></i><p class="text-xs font-bold text-success uppercase tracking-wider">Garajda</p><h3 id="dash-avl-veh" class="text-3xl lg:text-4xl xl:text-5xl font-extrabold mt-2 text-white">0</h3></div>
+       <div onclick="window.filterDashboard('maintenance')" class="stat glass p-6 border-b-4 border-b-warning"><i class="ico fa-solid fa-wrench text-warning"></i><p class="text-xs font-bold text-warning uppercase tracking-wider">Sanayide</p><h3 id="dash-mnt-veh" class="text-3xl lg:text-4xl xl:text-5xl font-extrabold mt-2 text-white">0</h3></div>
       </div>
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
        <div class="xl:col-span-8"><div class="glass p-6 h-full"><div class="flex justify-between items-center mb-4"><h3 class="ch-title !mb-0 !text-mission text-sm"><i class="fa-solid fa-satellite-dish mr-2 animate-pulse"></i>Sahadaki Araçlar</h3><span id="dash-live-count" class="badge badge-mission px-3 py-1 text-xs">0 Araç</span></div><div class="tbl-wrap no-scrollbar" style="max-height:350px"><table class="text-left min-w-[560px]"><thead><tr><th>Plaka</th><th>Personel</th><th>Çıkış</th><th>Güzergah / Amaç</th></tr></thead><tbody id="dash-live-table"></tbody></table></div></div></div>
@@ -187,7 +196,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
      <!-- KAYITLAR -->
      <div id="admin-records" class="hidden h-full flex-col w-full">
-      <div class="glass p-6 mb-5 shrink-0"><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end"><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Araç</label><select id="rec-veh" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Personel</label><select id="rec-usr" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Ay</label><input type="month" id="rec-month" class="w-full p-3.5"></div><div class="flex gap-3"><button onclick="window.renderRecords()" class="btn-3d btn-blue flex-1 py-3.5"><i class="fa-solid fa-filter mr-2"></i>Filtrele</button><button onclick="window.exportExcel()" class="btn-3d btn-green flex-1 py-3.5"><i class="fa-solid fa-file-excel mr-2"></i>Excel İndir</button></div></div></div>
+      <div class="glass p-6 mb-5 shrink-0"><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end"><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Araç</label><select id="rec-veh" class="w-full p-3.5 text-sm"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Personel</label><select id="rec-usr" class="w-full p-3.5 text-sm"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Ay</label><input type="month" id="rec-month" class="w-full p-3.5 text-sm"></div><div class="flex gap-3"><button onclick="window.renderRecords()" class="btn-3d btn-blue flex-1 py-3.5"><i class="fa-solid fa-filter mr-2"></i>Filtrele</button><button onclick="window.exportExcel()" class="btn-3d btn-green flex-1 py-3.5"><i class="fa-solid fa-file-excel mr-2"></i>Excel İndir</button></div></div></div>
       <div class="glass flex-1 min-h-0 flex flex-col"><div class="tbl-wrap flex-1"><table class="text-left min-w-[1000px] w-full"><thead><tr><th>Durum</th><th>Sürücü</th><th>Plaka</th><th>Güzergah & Not</th><th>Çıkış</th><th>Dönüş</th><th>Fark</th><th class="text-center">İşlem</th></tr></thead><tbody id="records-table" class="text-sm"></tbody></table></div></div>
      </div>
 
@@ -208,14 +217,13 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      </div>
     </main>
 
-    <!-- SAĞ ALT İMZA -->
     <div class="absolute bottom-4 right-6 text-[10px] text-gray-500/50 font-black tracking-[0.2em] pointer-events-none z-[9999] selection:bg-transparent">© 2026 TONOZ</div>
    </div>
   </div>
  </div>
 </div>
 
-<!-- ================= MODALLAR (BUZLU CAM) ================= -->
+<!-- ================= MODALLAR (BUZLU CAM / BLUR) ================= -->
 <div id="modal-overlay" class="fixed inset-0 bg-[#030612]/60 backdrop-blur-sm z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  
  <!-- ONAY PENCERESİ -->
@@ -274,7 +282,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
    <div id="vd-maint" class="hidden"><div class="glass overflow-x-auto rounded-2xl"><table class="text-left w-full"><thead><tr><th>Tarih</th><th>İşlem</th><th>KM</th><th>Not</th></tr></thead><tbody id="vdm-table"></tbody></table></div></div>
    <div id="vd-defects" class="hidden"><div class="glass overflow-hidden rounded-2xl"><table class="text-left w-full"><thead><tr><th class="w-1/3">Şikayet</th><th>Rapor</th></tr></thead><tbody id="vdd-table"></tbody></table></div></div>
    <div id="vd-history" class="hidden"><div class="glass overflow-x-auto rounded-2xl"><table class="text-left w-full"><thead><tr><th>Çıkış & Dönüş</th><th>Personel</th><th>Güzergah</th><th class="text-right">KM</th></tr></thead><tbody id="vdh-table"></tbody></table></div></div>
-   <div id="vd-qr" class="hidden flex-col items-center py-10"><div class="glass p-10 flex flex-col items-center text-center max-w-md w-full bg-white/5 border border-white/10"><div id="qr-modal-plate-box" class="mb-10"></div><div id="qrcode-box" class="p-4 bg-white rounded-2xl mb-6 shadow-2xl"></div><p id="qr-url-info" class="text-[10px] text-gray-500 mt-4 break-all bg-black/50 p-2 rounded w-full border border-white/5"></p></div><button onclick="window.printQR()" class="btn-3d btn-blue px-10 py-5 mt-8 text-lg font-extrabold tracking-wider"><i class="fa-solid fa-print mr-3"></i>Yazdır / PDF Olarak Kaydet</button></div>
+   <div id="vd-qr" class="hidden flex-col items-center py-10"><div class="glass p-10 flex flex-col items-center text-center max-w-md w-full bg-white/5 border border-white/10"><div id="qr-modal-plate-box" class="mb-10"></div><div id="qrcode-box" class="p-4 bg-white rounded-2xl mb-6 shadow-2xl"></div><p id="qr-url-info" class="text-[10px] text-gray-500 mt-4 break-all bg-black/50 p-2 rounded w-full border border-white/5"></p></div><button onclick="window.printQR()" class="btn-3d btn-blue px-10 py-5 mt-8 text-lg font-extrabold tracking-wider"><i class="fa-solid fa-print mr-3"></i>Yazdır / PDF Kaydet</button></div>
   </div>
  </div>
 
@@ -291,17 +299,17 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      <input type="hidden" id="vf-img-base64">
    </div>
    <div class="grid sm:grid-cols-2 gap-5">
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" maxlength="12" class="w-full p-4 uppercase font-extrabold text-xl text-center" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" maxlength="40" class="w-full p-4 font-bold" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Güncel KM *</label><input type="number" id="vf-km" class="w-full p-4 font-extrabold text-xl text-blue-400 bg-blue-900/10 text-center" required></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Yakıt</label><select id="vf-fuel" class="w-full p-4"><option>Dizel</option><option>Benzin</option><option>Elektrik</option></select></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Model Yılı</label><input type="number" id="vf-year" class="w-full p-4" placeholder="2020"></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Renk</label><input type="text" id="vf-color" class="w-full p-4" placeholder="Beyaz"></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Şasi No (VIN)</label><input type="text" id="vf-vin" class="w-full p-4 font-mono"></div>
-    <div><label class="block text-xs font-bold text-textmuted mb-2">Muayene Bitiş</label><input type="date" id="vf-ins" class="w-full p-4"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Plaka *</label><input type="text" id="vf-plate" maxlength="12" class="w-full p-3 uppercase font-extrabold text-xl text-center" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Model *</label><input type="text" id="vf-model" maxlength="40" class="w-full p-3 font-bold" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Güncel KM *</label><input type="number" id="vf-km" class="w-full p-3 font-extrabold text-xl text-blue-400 bg-blue-900/10 text-center" required></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Yakıt</label><select id="vf-fuel" class="w-full p-3"><option>Dizel</option><option>Benzin</option><option>Elektrik</option></select></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Model Yılı</label><input type="number" id="vf-year" class="w-full p-3" placeholder="2020"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Renk</label><input type="text" id="vf-color" class="w-full p-3" placeholder="Beyaz"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Şasi No (VIN)</label><input type="text" id="vf-vin" class="w-full p-3 font-mono"></div>
+    <div><label class="block text-xs font-bold text-textmuted mb-2">Muayene Bitiş</label><input type="date" id="vf-ins" class="w-full p-3"></div>
     <div class="sm:col-span-2 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5"><p class="text-sm font-extrabold text-yellow-400 mb-2">Son Bakım Bilgisi (Sisteme Giriş Öncesi)</p><div class="grid sm:grid-cols-2 gap-4"><input type="number" id="vf-lastkm" class="p-4 bg-black/40" placeholder="Son bakım KM"><input type="date" id="vf-lastdate" class="p-4 bg-black/40"></div></div>
-    <div id="vf-status-box" class="hidden sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Durum</label><select id="vf-status" class="w-full p-4 font-bold"><option value="available">Müsait</option><option value="maintenance">Sanayide</option></select></div>
-    <div class="sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Yönetici Notu</label><textarea id="vf-notes" class="w-full p-4" rows="2"></textarea></div>
+    <div id="vf-status-box" class="hidden sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Durum</label><select id="vf-status" class="w-full p-3 font-bold"><option value="available">Müsait</option><option value="maintenance">Sanayide</option></select></div>
+    <div class="sm:col-span-2"><label class="block text-xs font-bold text-textmuted mb-2">Yönetici Notu</label><textarea id="vf-notes" class="w-full p-3" rows="2"></textarea></div>
    </div>
    <button type="submit" class="btn-3d btn-green w-full py-5 text-lg"><i class="fa-solid fa-floppy-disk mr-2"></i>Kaydet</button>
   </form>
@@ -381,7 +389,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 </div>
 
 <!-- A4 ÇIKTI -->
-<div id="print-qr-wrapper">
+<div id="print-qr-wrapper" class="hidden">
  <div style="font-family:Inter,sans-serif;text-align:center;border:8px solid #1e3a8a;padding:60px 40px;border-radius:30px;width:85%;background:#fff">
   <h1 id="pr-org" style="font-size:30px;font-weight:900;color:#0f172a;margin:0"></h1>
   <h2 id="pr-sub" style="font-size:22px;font-weight:700;color:#334155;margin:10px 0 30px"></h2>
