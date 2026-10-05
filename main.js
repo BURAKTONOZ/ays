@@ -3,7 +3,7 @@ const path = require('path');
 
 let mainWindow;
 
-// Windows hata mesajlarını sustur
+// Windows hata mesajlarını susturur
 dialog.showErrorBox = function(title, content) {
     console.log(`Hata engellendi: ${title} - ${content}`);
 };
@@ -25,8 +25,8 @@ if (!gotTheLock) {
       height: 800,
       minWidth: 1024,
       minHeight: 700,
-      frame: false, // Windows penceresini kapatır
-      transparent: true, // Yuvarlatılmış köşelerin çalışmasını sağlar
+      frame: false, 
+      transparent: true, // Yuvarlatılmış köşeler için saydamlık aktif
       icon: path.join(__dirname, 'icon.ico'),
       webPreferences: {
         nodeIntegration: true, 
@@ -39,7 +39,6 @@ if (!gotTheLock) {
   app.whenReady().then(createWindow);
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-  // Üst Bardan Gelen Komutlar
   ipcMain.on('window-minimize', () => { if(mainWindow) mainWindow.minimize(); });
   ipcMain.on('window-maximize', () => {
     if(mainWindow) { mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(); }
