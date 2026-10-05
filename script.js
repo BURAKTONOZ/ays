@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Hata Korumalı Dinleyici
 const listen = (id, event, callback) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(event, callback);
@@ -109,7 +108,7 @@ listen('form-admin-login', 'submit', (e) => {
     }
 });
 
-/* ================= YARDIMCILAR ================= */
+/* ================= YARDIMCILAR VE ESNEMEYEN YENİ PLAKA TASARIMI ================= */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
 const hashPin=(p,salt)=>H('nmr|'+salt+'|'+p);
@@ -117,11 +116,25 @@ const normPlate=s=>String(s).toUpperCase().replace(/\s+/g,'');
 const fmtPlate=s=>String(s).toUpperCase().trim().replace(/\s+/g,' ');
 const num=v=>Number.isFinite(v)?v:0;
 const nf=n=>num(n).toLocaleString('tr-TR');
-// UTC SAAT HATASI GİDERİLDİ (Türkiye saatine göre yerel)
 const todayStr=()=>new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
 const monthKey=iso=>{const d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 const idGen=()=>'_'+Math.random().toString(36).slice(2,11)+Date.now().toString(36).slice(-4);
-const plateHtml=(p,c='scale-100 origin-left')=>`<div class="tr-plate ${c}"><div class="tr-plate-blue"><span class="text-white font-bold text-[9px] leading-none">TR</span></div><div class="tr-plate-text">${esc(p)}</div></div>`;
+
+// YENİ: Plakalar artık CSS Scale ile değil, gerçek boyutlarıyla çizilir (Üst üste binmeyi engeller)
+const plateHtml = (p, size = 'md') => {
+    let w = 'w-6', ts = 'text-[8px]', px = 'px-3', py = 'py-1', tSize = 'text-xl';
+    if(size === 'sm') { w = 'w-4'; ts = 'text-[6px]'; px = 'px-2'; py = 'py-0.5'; tSize = 'text-sm'; }
+    if(size === 'lg') { w = 'w-8'; ts = 'text-[10px]'; px = 'px-4'; py = 'py-2'; tSize = 'text-3xl'; }
+    if(size === 'xl') { w = 'w-12'; ts = 'text-xs'; px = 'px-6'; py = 'py-3'; tSize = 'text-5xl'; }
+    return `<div class="inline-flex border-[3px] border-[#111827] rounded-lg overflow-hidden bg-white shadow-md shrink-0">
+        <div class="bg-[#0033A0] ${w} flex items-end justify-center pb-0.5">
+            <span class="text-white font-bold ${ts} leading-none">TR</span>
+        </div>
+        <div class="text-[#111827] font-bold uppercase flex items-center font-[Oswald] ${px} ${py} ${tSize} tracking-widest leading-none">
+            ${esc(p)}
+        </div>
+    </div>`;
+};
 const Utils={dt:s=>{if(!s)return'--';const d=new Date(s);if(isNaN(d))return'--';return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})},d:s=>{if(!s)return'--';const d=new Date(s);return isNaN(d)?'--':d.toLocaleDateString('tr-TR')},plate:plateHtml};
 
 const vehicleById=id=>window.DB_DATA.vehicles.find(v=>v.id===id);
@@ -170,7 +183,7 @@ function updateClock(){
 }
 setInterval(updateClock,30000); updateClock();
 
-/* ================= MODAL MERKEZLEME VE FLU ARKAPLAN ================= */
+/* ================= MODAL MERKEZLEME ================= */
 const overlay=document.getElementById('modal-overlay');let closeTimeout=null;
 window.openModal=function(id){
  clearTimeout(closeTimeout);
@@ -250,9 +263,20 @@ function lineChart(pts){
  return`<svg viewBox="0 0 ${W} ${Hh}" class="w-full drop-shadow-md"><defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".4"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${grid}<polygon points="${area}" fill="url(#lg2)"/><polyline points="${line}" fill="none" stroke="#22c55e" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
 }
 
-// ALERT KARTINDAKİ BUTON TASMASI (flex-col sm:flex-row) İLE ÇÖZÜLDÜ
+// UYARI KARTLARI DÜZENLENDİ (KÜÇÜLTÜNCE PLAKA KÜÇÜLMEZ)
 function alertCard(color,icon,title,plateHtml,extra,btn){
- return`<div class="bg-${color}/10 border-l-4 border-${color} p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-${color}/20 transition"><div class="flex-1 min-w-0 w-full"><div class="flex items-center gap-2 mb-2"><i class="fa-solid ${icon} text-${color} text-lg"></i><span class="font-extrabold text-sm text-${color} uppercase tracking-wider">${title}</span></div><div class="flex items-center gap-4">${plateHtml}<span class="text-sm font-bold text-gray-200">${extra}</span></div></div><div class="shrink-0 w-full sm:w-auto">${btn||''}</div></div>`;
+ return `
+ <div class="bg-${color}/10 border-l-4 border-${color} p-4 rounded-xl flex flex-col gap-3 hover:bg-${color}/20 transition">
+    <div class="flex items-center gap-2">
+        <i class="fa-solid ${icon} text-${color} text-lg"></i>
+        <span class="font-extrabold text-sm text-${color} uppercase tracking-wider">${title}</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+        ${plateHtml}
+        <span class="text-sm font-bold text-gray-200">${extra}</span>
+    </div>
+    <div class="w-full mt-1">${btn||''}</div>
+ </div>`;
 }
 
 window.renderDashboard=function(){
@@ -292,17 +316,17 @@ window.renderDashboard=function(){
  let html='',n=0;
  missions.filter(m=>m.status==='completed'&&m.returnNote&&m.noteResolved===false).forEach(m=>{
   const v=vehicles.find(v=>v.id===m.vehicleId);if(!v)return; const u=users.find(u=>u.id===m.userId)||{name:'?'};
-  html+=`<div class="bg-red-900/20 border-l-4 border-red-500 p-5 rounded-xl flex flex-col gap-3"><div class="flex justify-between items-center"><span class="badge badge-danger text-[10px] px-2 py-1"><i class="fa-solid fa-wrench mr-1"></i>Şoför Şikayeti</span><span class="text-xs text-red-300/60 font-bold">${Utils.d(m.endTime)}</span></div><div class="flex items-center gap-4">${Utils.plate(v.plate,'scale-[.65] origin-left -my-2')}<span class="text-sm font-bold text-white"><i class="fa-solid fa-user-circle mr-1 text-gray-400"></i>${esc(u.name)}</span></div><p class="text-sm text-red-200 bg-red-950/40 p-3 rounded-lg border border-red-500/20">"${esc(m.returnNote)}"</p><button onclick="window.openResolveModal('${m.id}')" class="btn-3d btn-green w-full py-2.5 text-xs"><i class="fa-solid fa-check mr-2"></i>Sorunu Giderildi Olarak İşaretle</button></div>`;n++;
+  html+=`<div class="bg-red-900/20 border-l-4 border-red-500 p-5 rounded-xl flex flex-col gap-3"><div class="flex justify-between items-center"><span class="badge badge-danger text-[10px] px-2 py-1"><i class="fa-solid fa-wrench mr-1"></i>Şoför Şikayeti</span><span class="text-xs text-red-300/60 font-bold">${Utils.d(m.endTime)}</span></div><div class="flex items-center gap-4">${Utils.plate(v.plate,'sm')}<span class="text-sm font-bold text-white"><i class="fa-solid fa-user-circle mr-1 text-gray-400"></i>${esc(u.name)}</span></div><p class="text-sm text-red-200 bg-red-950/40 p-3 rounded-lg border border-red-500/20">"${esc(m.returnNote)}"</p><button onclick="window.openResolveModal('${m.id}')" class="btn-3d btn-green w-full py-2.5 text-xs"><i class="fa-solid fa-check mr-2"></i>Sorunu Giderildi Olarak İşaretle</button></div>`;n++;
  });
  const missing=[];
  vehicles.forEach(v=>{
-  const s=maintStatus(v),pl=Utils.plate(v.plate,'scale-[.7] origin-left');
+  const s=maintStatus(v),pl=Utils.plate(v.plate,'md');
   if(s.missing){missing.push(v);}
-  else if(s.state==='over'){html+=alertCard('danger','fa-oil-can','Bakım Gecikti!',pl,'<span class="text-red-400 font-black">KM/Süre Geçti</span>',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs">Bakım İşle</button>`);n++}
-  else if(s.state==='soon'){html+=alertCard('warning','fa-oil-can','Bakım Yaklaştı',pl,`Kalan: <b class="text-white">${nf(s.remain)} KM</b>`,`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs">Bakım İşle</button>`);n++}
+  else if(s.state==='over'){html+=alertCard('danger','fa-oil-can','Bakım Gecikti!',pl,s.remain<0?`<span class="text-red-400 font-black">${nf(-s.remain)} KM GECMİŞ</span>`:'<span class="text-red-400 font-black">Süre Doldu</span>',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs shadow-lg">Bakım İşle</button>`);n++}
+  else if(s.state==='soon'){html+=alertCard('warning','fa-oil-can','Bakım Yaklaştı',pl,`Kalan: <b class="text-white">${nf(s.remain)} KM</b>`,`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-yellow w-full py-2.5 text-xs shadow-lg">Bakım İşle</button>`);n++}
   if(v.ins){
    const exp=new Date(v.ins+'T23:59:59'),days=Math.ceil((exp-now)/864e5);
-   const iBtn=`<button onclick="window.openInspForm('${v.id}')" class="btn-3d btn-green w-full py-2.5 text-xs">Yenilendi</button>`;
+   const iBtn=`<button onclick="window.openInspForm('${v.id}')" class="btn-3d btn-green w-full py-2.5 text-xs shadow-lg">Yenilendi</button>`;
    if(exp<now){html+=alertCard('danger','fa-calendar-xmark','Muayene Geçmiş!',pl,'<span class="text-red-400 font-black">Süresi Doldu</span>',iBtn);n++}
    else if(days<=15){html+=alertCard('warning','fa-calendar-day','Muayene Yaklaştı',pl,`Son: <b class="text-white">${days} Gün</b>`,iBtn);n++}
   }
@@ -310,12 +334,12 @@ window.renderDashboard=function(){
  const act=missions.filter(m=>m.status==='active');
  act.forEach(m=>{
   const h=(now-new Date(m.startTime))/36e5;
-  if(h>8){const v=vehicles.find(v=>v.id===m.vehicleId);html+=alertCard('danger','fa-clock','Araç Dönmedi',Utils.plate(v?v.plate:'?','scale-[.7] origin-left'),`Süre: <b class="text-red-400">${Math.floor(h)} saat</b>`,'<button onclick="window.switchAdminTab(\'records\')" class="btn-3d btn-red w-full py-2.5 text-xs">Kayıtlardan Kapat</button>');n++}
+  if(h>8){const v=vehicles.find(v=>v.id===m.vehicleId);html+=alertCard('danger','fa-clock','Araç Dönmedi',Utils.plate(v?v.plate:'?','md'),`Süre: <b class="text-red-400">${Math.floor(h)} saat</b>`,`<button onclick="window.switchAdminTab('records')" class="btn-3d btn-red w-full py-2.5 text-xs shadow-lg">Kayıtlardan Kapat</button>`);n++}
  });
- missing.forEach(v=>{html+=alertCard('gray-400','fa-circle-info','Bakım Bilgisi Eksik',Utils.plate(v.plate,'scale-[.7] origin-left'),'Kayıt yok',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-gray w-full py-2.5 text-xs">Şimdi Gir</button>`);n++});
+ missing.forEach(v=>{html+=alertCard('gray-400','fa-circle-info','Bakım Bilgisi Eksik',Utils.plate(v.plate,'md'),'Kayıt yok',`<button onclick="window.openMaintForm('${v.id}')" class="btn-3d btn-gray w-full py-2.5 text-xs shadow-lg">Şimdi Gir</button>`);n++});
  
  const elAlerts = document.getElementById('dash-alerts');
- if(elAlerts) elAlerts.innerHTML=n?html:'<div class="text-center text-textmuted text-sm mt-20 flex flex-col items-center"><i class="fa-solid fa-shield-check text-6xl text-success/50 mb-4"></i>Tüm sistemler sorunsuz.</div>';
+ if(elAlerts) elAlerts.innerHTML=n?html:'<div class="text-center text-textmuted text-sm mt-20 flex flex-col items-center"><i class="fa-solid fa-shield-check text-6xl text-success/50 mb-4"></i>Tüm sistemler sorunsuz çalışıyor.</div>';
 
  const elLiveCount = document.getElementById('dash-live-count');
  if(elLiveCount) elLiveCount.innerText=act.length+' Araç';
@@ -323,7 +347,7 @@ window.renderDashboard=function(){
  const elLiveTable = document.getElementById('dash-live-table');
  if(elLiveTable) elLiveTable.innerHTML=act.length?act.map(m=>{
   const v=vehicles.find(v=>v.id===m.vehicleId)||{plate:'?'},u=users.find(u=>u.id===m.userId)||{name:'?'};
-  return `<tr class="hover:bg-white/5 transition"><td class="w-36 py-3">${Utils.plate(v.plate,'scale-[.8] origin-left')}</td><td class="font-bold text-sm text-white">${esc(u.name)}</td><td><div class="text-xs font-bold text-mission bg-mission/10 inline-block px-2 py-1 rounded border border-mission/20">${new Date(m.startTime).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</div><div class="text-[10px] text-textmuted mt-1 uppercase tracking-wider">Çıkış: <b class="text-white">${nf(m.startKm)}</b></div></td><td class="text-sm"><div class="truncate max-w-[220px] font-bold text-gray-200">${esc(m.destination)}</div><div class="text-[10px] text-mission font-bold uppercase tracking-wider mt-0.5">${esc(m.purpose||'')}</div></td></tr>`}).join(''):'<tr><td colspan="4" class="text-center py-12 text-textmuted text-sm bg-black/10 rounded-xl">Şu an sahada olan araç bulunmuyor.</td></tr>';
+  return `<tr class="hover:bg-white/5 transition"><td class="w-36 py-3">${Utils.plate(v.plate,'sm')}</td><td class="font-bold text-sm text-white">${esc(u.name)}</td><td><div class="text-xs font-bold text-mission bg-mission/10 inline-block px-2 py-1 rounded border border-mission/20">${new Date(m.startTime).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</div><div class="text-[10px] text-textmuted mt-1 uppercase tracking-wider">Çıkış: <b class="text-white">${nf(m.startKm)}</b></div></td><td class="text-sm"><div class="truncate max-w-[220px] font-bold text-gray-200">${esc(m.destination)}</div><div class="text-[10px] text-mission font-bold uppercase tracking-wider mt-0.5">${esc(m.purpose||'')}</div></td></tr>`}).join(''):'<tr><td colspan="4" class="text-center py-12 text-textmuted text-sm bg-black/10 rounded-xl">Şu an sahada olan araç bulunmuyor.</td></tr>';
 };
 
 /* ================= EXCEL TABLOSU ================= */
@@ -334,59 +358,11 @@ window.getFilteredRecords = function() {
  return vid?ms.sort((a,b)=>b.startKm-a.startKm):ms.sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
 };
 
-window.renderFleet=function(){
- const elFilter = document.getElementById('fleet-filter');
- if(!elFilter) return;
- const f=elFilter.value;let vs=window.DB_DATA.vehicles.filter(v=>!v.isDeleted);
- if(f!=='all')vs=vs.filter(v=>v.status===f);
- const missions=window.DB_DATA.missions,users=window.DB_DATA.users;
- const elContainer = document.getElementById('fleet-container');
- if(elContainer) elContainer.innerHTML=vs.map(v=>{
-  let badge='<span class="badge badge-success px-3 py-1.5"><i class="fa-solid fa-square-parking mr-2"></i>Garajda</span>';
-  if(v.status==='busy')badge='<span class="badge badge-mission animate-mission px-3 py-1.5"><i class="fa-solid fa-route mr-2"></i>Sahada</span>';
-  if(v.status==='maintenance')badge='<span class="badge badge-warning px-3 py-1.5"><i class="fa-solid fa-wrench mr-2"></i>Sanayide</span>';
-  const img=v.image?`<img src="${esc(v.image)}" alt="" class="w-full h-full object-cover opacity-80">`:'<div class="w-full h-full flex items-center justify-center bg-gray-900 text-white/10"><i class="fa-solid fa-car-side text-8xl"></i></div>';
-  const vm=missions.filter(m=>m.vehicleId===v.id).sort((a,b)=>new Date(b.endTime||b.startTime)-new Date(a.endTime||a.startTime));
-  let drv='<span class="text-textmuted italic">Hiç Kullanılmadı</span>',issue='';
-  if(vm.length){const lu=users.find(u=>u.id===vm[0].userId);drv=v.status==='busy'?`<b class="text-mission"><i class="fa-solid fa-user-circle mr-1"></i>${esc(lu?lu.name:'?')}</b> (Şu an onda)`:`Son Kullanan: <span class="text-white">${esc(lu?lu.name:'?')}</span>`}
-  const open=vm.filter(m=>m.status==='completed'&&m.returnNote&&m.noteResolved===false);
-  if(open.length)issue=`<div class="bg-red-500/20 text-red-300 text-[11px] px-3 py-2 rounded-lg font-bold mt-3 truncate border border-red-500/30"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Açık Şikayet (${open.length}): ${esc(open[0].returnNote)}</div>`;
-  const ms=maintStatus(v);
-  const mb=ms.missing?'<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"><i class="fa-solid fa-circle-info mr-1"></i>Bakım Bilgisi Yok</span>':ms.state==='over'?'<span class="text-[10px] font-black text-red-400 uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Bakım Gecikti</span>':ms.state==='soon'?'<span class="text-[10px] font-bold text-yellow-400 uppercase tracking-widest"><i class="fa-solid fa-clock mr-1"></i>Bakım Yaklaştı</span>':'<span class="text-[10px] font-bold text-green-400 uppercase tracking-widest"><i class="fa-solid fa-check mr-1"></i>Bakım Güncel</span>';
-  return `<div class="glass overflow-hidden cursor-pointer flex flex-col hover:border-primary hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition transform hover:-translate-y-1 group" onclick="window.openVehicleDetail('${v.id}')"><div class="relative h-48 bg-black/60 border-b border-white/10 overflow-hidden"><div class="absolute top-3 right-3 z-10">${badge}</div>${img}<div class="absolute bottom-3 left-3 z-10 shadow-lg">${Utils.plate(v.plate,'scale-[.85] origin-bottom-left')}</div></div><div class="p-5 flex-1 flex flex-col"><div class="flex justify-between items-start mb-4"><div class="font-black text-white text-lg tracking-wide group-hover:text-blue-400 transition">${esc(v.model)}</div><div class="text-xs font-black text-white bg-blue-600/30 border border-blue-500/30 px-3 py-1.5 rounded-lg shadow-inner">${nf(v.km)} KM</div></div><div class="text-xs text-gray-400 mb-4">${drv}</div><div class="mt-auto">${mb}${issue}</div></div></div>`;
- }).join('')||'<div class="col-span-full text-center text-textmuted p-12 bg-black/20 rounded-2xl">Aradığınız kriterlerde araç bulunamadı.</div>';
-};
-
-window.renderUsers=function(){
- const el = document.getElementById('users-table');
- if(!el) return;
- el.innerHTML=window.DB_DATA.users.filter(u=>!u.isDeleted).map(u=>{
-  const s=u.isActive===false?'<span class="badge badge-warning text-[10px]">Pasif (İzinde/Ayrıldı)</span>':'<span class="badge badge-success text-[10px]">Aktif Personel</span>';
-  return `<tr class="hover:bg-white/5 border-b border-white/5 transition"><td class="font-extrabold text-white text-base py-4"><i class="fa-solid fa-user-tie text-blue-400 mr-3"></i>${esc(u.name)}</td><td class="text-sm text-gray-300 font-bold">${esc(u.sicil||'---')} <span class="text-textmuted font-normal mx-2">/</span> ${esc(u.phone||'---')}</td><td class="font-black text-primary text-lg text-center bg-blue-900/10">${esc(u.licenseClass||'-')}</td><td class="text-center">${s}</td><td class="text-center"><button onclick="window.openUserForm('${u.id}')" class="text-yellow-400 hover:text-white bg-yellow-500/10 hover:bg-yellow-500/30 transition p-3 rounded-xl mr-3" title="Düzenle"><i class="fa-solid fa-pen text-lg"></i></button><button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/30 transition p-3 rounded-xl" title="Sistemden Sil"><i class="fa-solid fa-trash text-lg"></i></button></td></tr>`}).join('')||'<tr><td colspan="5" class="text-center py-12 text-textmuted bg-black/20 rounded-2xl">Sistemde kayıtlı personel bulunamadı.</td></tr>';
-};
-
-window.initRecords=function(){
- const v=document.getElementById('rec-veh'),u=document.getElementById('rec-usr');
- if(!v || !u) return;
- const pv=v.value,pu=u.value;
- v.innerHTML='<option value="">Tüm Araçlar</option>'+window.DB_DATA.vehicles.map(x=>`<option value="${esc(x.id)}">${esc(x.plate)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
- u.innerHTML='<option value="">Tüm Personel</option>'+window.DB_DATA.users.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
- v.value=pv;u.value=pu; window.renderRecords();
-};
-
-window.renderRecords=function(){
- const ms=window.getFilteredRecords();
- const vs=window.DB_DATA.vehicles,us=window.DB_DATA.users;
- const elTab = document.getElementById('records-table');
- if(elTab) {
-     elTab.innerHTML=ms.length?ms.map(m=>{
-      const v=vs.find(x=>x.id===m.vehicleId)||{plate:'Bilinmiyor'},u=us.find(x=>x.id===m.userId)||{name:'Silinmiş'},a=m.status==='active';
-      return `<tr class="hover:bg-white/5 border-b border-white/5 transition"><td class="text-center py-4">${a?'<span class="badge badge-mission text-[10px] animate-mission">Sahada</span>':'<span class="badge badge-success text-[10px]">Tamamlandı</span>'}</td><td class="font-extrabold text-white text-sm">${esc(u.name)}</td><td>${Utils.plate(v.plate,'scale-[.75] origin-left')}</td><td><div class="max-w-[220px] truncate text-white text-sm">${esc(m.destination)}</div><div class="text-[10px] text-mission font-bold uppercase tracking-wider mt-0.5">${esc(m.purpose||'')}</div>${m.returnNote?`<div class="text-[10px] font-bold text-red-400 mt-1 bg-red-500/10 inline-block px-1.5 py-0.5 rounded"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${esc(m.returnNote)}</div>`:''}${m.closeNote?`<div class="text-[10px] text-textmuted italic mt-1 border-l-2 border-gray-500 pl-1">${esc(m.closeNote)}</div>`:''}</td><td class="bg-blue-500/5 px-4"><div class="text-[11px] font-bold text-blue-300 uppercase tracking-widest">${Utils.dt(m.startTime)}</div><div class="font-black text-blue-400 text-lg">${nf(m.startKm)}</div></td><td class="bg-green-500/5 px-4">${a?'<span class="text-xs text-gray-400 italic font-bold">Devam Ediyor...</span>':`<div class="text-[11px] font-bold text-green-300 uppercase tracking-widest">${Utils.dt(m.endTime)}</div><div class="font-black text-green-400 text-lg">${nf(m.endKm)}</div>`}</td><td class="text-center font-black text-yellow-500 text-xl">${a?'--':'+'+nf(m.endKm-m.startKm)}</td><td class="text-center whitespace-nowrap"><button onclick="window.openRecordEdit('${m.id}')" class="text-yellow-400 hover:text-white bg-yellow-500/10 hover:bg-yellow-500/30 transition p-3 rounded-xl" title="${a?'Zorla Kapat':'Kaydı Düzenle'}"><i class="fa-solid ${a?'fa-lock':'fa-pen'} text-lg"></i></button> <button onclick="window.deleteRecord('${m.id}')" class="text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/30 transition p-3 rounded-xl ml-1" title="Sistemden Sil"><i class="fa-solid fa-trash text-lg"></i></button></td></tr>`}).join(''):'<tr><td colspan="8" class="text-center py-12 text-textmuted text-sm bg-black/20 rounded-xl">Filtrelere uygun kayıt bulunamadı.</td></tr>';
- }
-};
-
 /* YENİ EXCEL EXPORT ÖZELLİĞİ */
-window.exportExcel=function(){
+window.exportExcel = function() {
+ if (typeof XLSX === 'undefined') {
+    return window.showToast('Excel kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.', 'error');
+ }
  const ms=window.getFilteredRecords();
  const vs=window.DB_DATA.vehicles;
  const us=window.DB_DATA.users;
@@ -411,6 +387,59 @@ window.exportExcel=function(){
  const wb = XLSX.utils.book_new();
  XLSX.utils.book_append_sheet(wb, ws, "Gorev Kayitlari");
  XLSX.writeFile(wb, 'Numarataj_Filo_Rapor_' + todayStr() + '.xlsx');
+};
+
+window.renderFleet=function(){
+ const elFilter = document.getElementById('fleet-filter');
+ if(!elFilter) return;
+ const f=elFilter.value;let vs=window.DB_DATA.vehicles.filter(v=>!v.isDeleted);
+ if(f!=='all')vs=vs.filter(v=>v.status===f);
+ const missions=window.DB_DATA.missions,users=window.DB_DATA.users;
+ const elContainer = document.getElementById('fleet-container');
+ if(elContainer) elContainer.innerHTML=vs.map(v=>{
+  let badge='<span class="badge badge-success px-3 py-1.5"><i class="fa-solid fa-square-parking mr-2"></i>Garajda</span>';
+  if(v.status==='busy')badge='<span class="badge badge-mission animate-mission px-3 py-1.5"><i class="fa-solid fa-route mr-2"></i>Sahada</span>';
+  if(v.status==='maintenance')badge='<span class="badge badge-warning px-3 py-1.5"><i class="fa-solid fa-wrench mr-2"></i>Sanayide</span>';
+  const img=v.image?`<img src="${esc(v.image)}" alt="" class="w-full h-full object-cover opacity-80">`:'<div class="w-full h-full flex items-center justify-center bg-gray-900 text-white/10"><i class="fa-solid fa-car-side text-8xl"></i></div>';
+  const vm=missions.filter(m=>m.vehicleId===v.id).sort((a,b)=>new Date(b.endTime||b.startTime)-new Date(a.endTime||a.startTime));
+  let drv='<span class="text-textmuted italic">Hiç Kullanılmadı</span>',issue='';
+  if(vm.length){const lu=users.find(u=>u.id===vm[0].userId);drv=v.status==='busy'?`<b class="text-mission"><i class="fa-solid fa-user-circle mr-1"></i>${esc(lu?lu.name:'?')}</b> (Şu an onda)`:`Son Kullanan: <span class="text-white">${esc(lu?lu.name:'?')}</span>`}
+  const open=vm.filter(m=>m.status==='completed'&&m.returnNote&&m.noteResolved===false);
+  if(open.length)issue=`<div class="bg-red-500/20 text-red-300 text-[11px] px-3 py-2 rounded-lg font-bold mt-3 truncate border border-red-500/30"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Açık Şikayet (${open.length}): ${esc(open[0].returnNote)}</div>`;
+  const ms=maintStatus(v);
+  const mb=ms.missing?'<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest"><i class="fa-solid fa-circle-info mr-1"></i>Bakım Bilgisi Yok</span>':ms.state==='over'?'<span class="text-[10px] font-black text-red-400 uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Bakım Gecikti</span>':ms.state==='soon'?'<span class="text-[10px] font-bold text-yellow-400 uppercase tracking-widest"><i class="fa-solid fa-clock mr-1"></i>Bakım Yaklaştı</span>':'<span class="text-[10px] font-bold text-green-400 uppercase tracking-widest"><i class="fa-solid fa-check mr-1"></i>Bakım Güncel</span>';
+  return `<div class="glass overflow-hidden cursor-pointer flex flex-col hover:border-primary hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition transform hover:-translate-y-1 group" onclick="window.openVehicleDetail('${v.id}')"><div class="relative h-48 bg-black/60 border-b border-white/10 overflow-hidden"><div class="absolute top-3 right-3 z-10">${badge}</div>${img}<div class="absolute bottom-3 left-3 z-10 shadow-lg">${Utils.plate(v.plate,'md')}</div></div><div class="p-5 flex-1 flex flex-col"><div class="flex justify-between items-start mb-4"><div class="font-black text-white text-lg tracking-wide group-hover:text-blue-400 transition">${esc(v.model)}</div><div class="text-xs font-black text-white bg-blue-600/30 border border-blue-500/30 px-3 py-1.5 rounded-lg shadow-inner">${nf(v.km)} KM</div></div><div class="text-xs text-gray-400 mb-4">${drv}</div><div class="mt-auto">${mb}${issue}</div></div></div>`;
+ }).join('')||'<div class="col-span-full text-center text-textmuted p-12 bg-black/20 rounded-2xl">Aradığınız kriterlerde araç bulunamadı.</div>';
+};
+
+window.renderUsers=function(){
+ const el = document.getElementById('users-table');
+ if(!el) return;
+ el.innerHTML=window.DB_DATA.users.filter(u=>!u.isDeleted).map(u=>{
+  const s=u.isActive===false?'<span class="badge badge-warning text-[10px]">Pasif (İzinde/Ayrıldı)</span>':'<span class="badge badge-success text-[10px]">Aktif Personel</span>';
+  return `<tr class="hover:bg-white/5 border-b border-white/5 transition"><td class="font-extrabold text-white text-base py-4"><i class="fa-solid fa-user-tie text-blue-400 mr-3"></i>${esc(u.name)}</td><td class="text-sm text-gray-300 font-bold">${esc(u.sicil||'---')} <span class="text-textmuted font-normal mx-2">/</span> ${esc(u.phone||'---')}</td><td class="font-black text-primary text-lg text-center bg-blue-900/10">${esc(u.licenseClass||'-')}</td><td class="text-center">${s}</td><td class="text-center"><button onclick="window.openUserForm('${u.id}')" class="text-yellow-400 hover:text-white bg-yellow-500/10 hover:bg-yellow-500/30 transition p-3 rounded-xl mr-3" title="Düzenle"><i class="fa-solid fa-pen text-lg"></i></button><button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/30 transition p-3 rounded-xl" title="Sistemden Sil"><i class="fa-solid fa-trash text-lg"></i></button></td></tr>`}).join('')||'<tr><td colspan="5" class="text-center py-12 text-textmuted bg-black/20 rounded-2xl">Sistemde kayıtlı personel bulunamadı.</td></tr>';
+};
+
+window.initRecords=function(){
+ const v=document.getElementById('rec-veh'),u=document.getElementById('rec-usr');
+ if(!v || !u) return;
+ const pv=v.value,pu=u.value;
+ v.innerHTML='<option value="">Tüm Araçlar</option>'+window.DB_DATA.vehicles.map(x=>`<option value="${esc(x.id)}">${esc(x.plate)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
+ u.innerHTML='<option value="">Tüm Personel</option>'+window.DB_DATA.users.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
+ v.value=pv;u.value=pu; window.renderRecords();
+};
+
+window.renderRecords=function(){
+ const elVeh = document.getElementById('rec-veh'), elUsr = document.getElementById('rec-usr'), elMon = document.getElementById('rec-month');
+ if(!elVeh || !elUsr || !elMon) return;
+ const ms=window.getFilteredRecords();
+ const vs=window.DB_DATA.vehicles,us=window.DB_DATA.users;
+ const elTab = document.getElementById('records-table');
+ if(elTab) {
+     elTab.innerHTML=ms.length?ms.map(m=>{
+      const v=vs.find(x=>x.id===m.vehicleId)||{plate:'Bilinmiyor'},u=us.find(x=>x.id===m.userId)||{name:'Silinmiş'},a=m.status==='active';
+      return `<tr class="hover:bg-white/5 border-b border-white/5 transition"><td class="text-center py-4">${a?'<span class="badge badge-mission text-[10px] animate-mission">Sahada</span>':'<span class="badge badge-success text-[10px]">Tamamlandı</span>'}</td><td class="font-extrabold text-white text-sm">${esc(u.name)}</td><td>${Utils.plate(v.plate,'sm')}</td><td><div class="max-w-[220px] truncate text-white text-sm">${esc(m.destination)}</div><div class="text-[10px] text-mission font-bold uppercase tracking-wider mt-0.5">${esc(m.purpose||'')}</div>${m.returnNote?`<div class="text-[10px] font-bold text-red-400 mt-1 bg-red-500/10 inline-block px-1.5 py-0.5 rounded"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${esc(m.returnNote)}</div>`:''}${m.closeNote?`<div class="text-[10px] text-textmuted italic mt-1 border-l-2 border-gray-500 pl-1">${esc(m.closeNote)}</div>`:''}</td><td class="bg-blue-500/5 px-4"><div class="text-[11px] font-bold text-blue-300 uppercase tracking-widest">${Utils.dt(m.startTime)}</div><div class="font-black text-blue-400 text-lg">${nf(m.startKm)}</div></td><td class="bg-green-500/5 px-4">${a?'<span class="text-xs text-gray-400 italic font-bold">Devam Ediyor...</span>':`<div class="text-[11px] font-bold text-green-300 uppercase tracking-widest">${Utils.dt(m.endTime)}</div><div class="font-black text-green-400 text-lg">${nf(m.endKm)}</div>`}</td><td class="text-center font-black text-yellow-500 text-xl">${a?'--':'+'+nf(m.endKm-m.startKm)}</td><td class="text-center whitespace-nowrap"><button onclick="window.openRecordEdit('${m.id}')" class="text-yellow-400 hover:text-white bg-yellow-500/10 hover:bg-yellow-500/30 transition p-3 rounded-xl" title="${a?'Zorla Kapat':'Kaydı Düzenle'}"><i class="fa-solid ${a?'fa-lock':'fa-pen'} text-lg"></i></button> <button onclick="window.deleteRecord('${m.id}')" class="text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/30 transition p-3 rounded-xl ml-1" title="Sistemden Sil"><i class="fa-solid fa-trash text-lg"></i></button></td></tr>`}).join(''):'<tr><td colspan="8" class="text-center py-12 text-textmuted text-sm bg-black/20 rounded-xl">Filtrelere uygun kayıt bulunamadı.</td></tr>';
+ }
 };
 
 /* YENİ GÖREV SİLME ÖZELLİĞİ */
@@ -479,8 +508,8 @@ listen('form-vehicle', 'submit', async e=>{
 });
 
 window.openVehicleDetail=function(id,tab){
- const v=vehicleById(id);if(!v)return;
- document.getElementById('vd-plate-box').innerHTML=Utils.plate(v.plate,'scale-[1.2]');
+ curVid=id;const v=vehicleById(id);if(!v)return;
+ document.getElementById('vd-plate-box').innerHTML=Utils.plate(v.plate,'xl');
  document.getElementById('vd-model').innerText=v.model;
  let s='<span class="badge badge-success px-3 py-1.5"><i class="fa-solid fa-square-parking mr-2"></i>Garajda / Müsait</span>';if(v.status==='busy')s='<span class="badge badge-mission animate-mission px-3 py-1.5 shadow-[0_0_10px_rgba(56,189,248,0.5)]"><i class="fa-solid fa-route mr-2"></i>Şu an Sahada</span>';if(v.status==='maintenance')s='<span class="badge badge-warning px-3 py-1.5"><i class="fa-solid fa-wrench mr-2"></i>Sanayide</span>';
  document.getElementById('vd-status').innerHTML=s;
@@ -513,11 +542,11 @@ window.openVehicleDetail=function(id,tab){
  const c = window.DB_DATA.config;
  const base = c.baseUrl || 'https://buraktonoz.com/ays';
  const url= base + '?vid=' + encodeURIComponent(id);
- document.getElementById('qr-modal-plate-box').innerHTML=Utils.plate(v.plate,'scale-[1.5] origin-center');
+ document.getElementById('qr-modal-plate-box').innerHTML=Utils.plate(v.plate,'xl');
  document.getElementById('qrcode-box').innerHTML='';
  new QRCode(document.getElementById('qrcode-box'),{text:url,width:200,height:200,colorDark:'#0b1020',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
  document.getElementById('qr-url-info').innerText=url;
- document.getElementById('print-plate-holder').innerHTML=Utils.plate(v.plate);
+ document.getElementById('print-plate-holder').innerHTML=Utils.plate(v.plate,'xl');
  document.getElementById('print-qrcode-holder').innerHTML='';
  new QRCode(document.getElementById('print-qrcode-holder'),{text:url,width:300,height:300,colorDark:'#0b1020',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
  window.vdTab(tab||'info');window.openModal('modal-vehicle-detail');
