@@ -1,23 +1,64 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// Hata Korumalı Dinleyici
+// 1. TEMEL YARDIMCILAR VE DEĞİŞKENLER
 const listen = (id, event, callback) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(event, callback);
 };
 
-// GLOBAL KÜTÜPHANELERİN YÜKLENMESİ (Fonksiyonlar okumadan önce eklenmeli)
+let ipcRenderer = null;
+if (window.require) {
+    ipcRenderer = window.require('electron').ipcRenderer;
+    listen('win-min', 'click', () => ipcRenderer.send('window-minimize'));
+    listen('win-max', 'click', () => ipcRenderer.send('window-maximize'));
+    listen('win-close', 'click', () => ipcRenderer.send('window-close'));
+}
+
+const APP_VERSION = "1.0.0";
+const firebaseConfig = {
+  apiKey: "AIzaSyBCpOgcfBCp30-G2uxOYQ0NXRAiywOoTGY",
+  authDomain: "numarataj-arac-filo.firebaseapp.com",
+  databaseURL: "https://numarataj-arac-filo-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "numarataj-arac-filo"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 window.DB_DATA = { vehicles: [], users: [], missions: [], purposes: [], maints: [], config: {}, globalPass: "5555" };
 let isLoggedIn = false;
 let currentTab = 'dash';
 let initialLoadCount = 0;
 let systemVerified = false;
-let curVid = null; 
+let curVid = null;
 let closeTimeout = null;
 let returnToDetail = null;
 
-// ================= TÜM ARAYÜZ FONKSİYONLARI (Javascript çökse dahi butonlar çalışır) ================= //
+// ================= TÜM ARAYÜZ FONKSİYONLARI (GLOBAL TANIMLAMALAR) ================= //
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
+const hashPin=(p,salt)=>H('nmr|'+salt+'|'+p);
+const normPlate=s=>String(s).toUpperCase().replace(/\s+/g,'');
+const fmtPlate=s=>String(s).toUpperCase().trim().replace(/\s+/g,' ');
+const num=v=>Number.isFinite(v)?v:0;
+const nf=n=>num(n).toLocaleString('tr-TR');
+const todayStr=()=>new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+const monthKey=iso=>{const d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+const idGen=()=>'_'+Math.random().toString(36).slice(2,11)+Date.now().toString(36).slice(-4);
+
+const plateHtml = (p, size = 'md') => {
+    let w = 'w-6', ts = 'text-[8px]', px = 'px-3', py = 'py-1', tSize = 'text-xl';
+    if(size === 'sm') { w = 'w-4'; ts = 'text-[6px]'; px = 'px-2'; py = 'py-0.5'; tSize = 'text-sm'; }
+    if(size === 'lg') { w = 'w-8'; ts = 'text-[10px]'; px = 'px-4'; py = 'py-2'; tSize = 'text-3xl'; }
+    if(size === 'xl') { w = 'w-12'; ts = 'text-xs'; px = 'px-6'; py = 'py-3'; tSize = 'text-5xl'; }
+    return `<div class="inline-flex border-[3px] border-[#111827] rounded-lg overflow-hidden bg-white shadow-md shrink-0"><div class="bg-[#0033A0] ${w} flex items-end justify-center pb-0.5"><span class="text-white font-bold ${ts} leading-none">TR</span></div><div class="text-[#111827] font-bold uppercase flex items-center font-[Oswald] ${px} ${py} ${tSize} tracking-widest leading-none">${esc(p)}</div></div>`;
+};
+const Utils={dt:s=>{if(!s)return'--';const d=new Date(s);if(isNaN(d))return'--';return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})},d:s=>{if(!s)return'--';const d=new Date(s);return isNaN(d)?'--':d.toLocaleDateString('tr-TR')},plate:plateHtml};
+
+const vehicleById=id=>window.DB_DATA.vehicles.find(v=>v.id===id);
+const userById=id=>window.DB_DATA.users.find(u=>u.id===id);
+const activeMissionOfVehicle=vid=>window.DB_DATA.missions.find(m=>m.vehicleId===vid&&m.status==='active');
+const activeMissionOfUser=uid=>window.DB_DATA.missions.find(m=>m.userId===uid&&m.status==='active');
 
 window.showToast=function(msg,type='info'){
  const c=document.getElementById('toast-container');
@@ -38,11 +79,7 @@ window.customConfirm = function(msg) {
         const btnNo = document.getElementById('btn-confirm-no');
         const closeBtns = document.querySelectorAll('#modal-confirm .modal-close');
         
-        const cleanup = () => {
-            btnYes.onclick = null;
-            btnNo.onclick = null;
-            closeBtns.forEach(b => b.onclick = null);
-        };
+        const cleanup = () => { btnYes.onclick = null; btnNo.onclick = null; closeBtns.forEach(b => b.onclick = null); };
         btnYes.onclick = () => { cleanup(); window.closeModal(); resolve(true); };
         btnNo.onclick = () => { cleanup(); window.closeModal(); resolve(false); };
         closeBtns.forEach(b => b.onclick = () => { cleanup(); window.closeModal(); resolve(false); });
@@ -87,10 +124,15 @@ window.renderCurrent=function(){
  if(currentTab==='dash') window.renderDashboard(); else if(currentTab==='fleet') window.renderFleet();
  else if(currentTab==='users') window.renderUsers(); else if(currentTab==='records') window.initRecords(); else window.renderSettings();
 };
-
 window.filterDashboard=function(type){const f=document.getElementById('fleet-filter');if(f)f.value=type;window.switchAdminTab('fleet')};
-
 window.populatePurposes=function(id){const s=document.getElementById(id);if(!s)return;s.innerHTML=window.DB_DATA.purposes.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')};
+
+window.getFilteredRecords = function() {
+ const vid=document.getElementById('rec-veh').value,uid=document.getElementById('rec-usr').value,mo=document.getElementById('rec-month').value;
+ let ms=window.DB_DATA.missions;
+ if(vid)ms=ms.filter(m=>m.vehicleId===vid);if(uid)ms=ms.filter(m=>m.userId===uid);if(mo)ms=ms.filter(m=>monthKey(m.startTime)===mo);
+ return vid?ms.sort((a,b)=>b.startKm-a.startKm):ms.sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
+};
 
 window.exportExcel = function() {
  if (typeof XLSX === 'undefined' || !XLSX.utils) {
@@ -122,6 +164,7 @@ window.exportExcel = function() {
  XLSX.writeFile(wb, 'Numarataj_Filo_Rapor_' + todayStr() + '.xlsx');
 };
 
+/* TÜM MODAL AÇILIŞ FONKSİYONLARI */
 window.openVehicleForm = function(id=null){
  document.getElementById('form-vehicle').reset();
  const p=document.getElementById('vf-img-preview');p.classList.add('hidden');p.src='';
@@ -291,42 +334,11 @@ window.openInspForm=function(vid,fromDetail){
  document.getElementById('mi-vid').value=vid;document.getElementById('mi-plate').innerHTML=Utils.plate(v.plate, 'md'); window.openModal('modal-insp');
 };
 
-
-// ================= ELECTRON İLETİŞİM KÖPRÜSÜ ================= //
-if (window.require) {
-    ipcRenderer = window.require('electron').ipcRenderer;
-    listen('win-min', 'click', () => ipcRenderer.send('window-minimize'));
-    listen('win-max', 'click', () => ipcRenderer.send('window-maximize'));
-    listen('win-close', 'click', () => ipcRenderer.send('window-close'));
-}
-
-
-// ================= FIREBASE BAĞLANTILARI ================= //
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// KÖK DİZİN
-onValue(ref(db, 'adminPass'), snap => {
-    window.DB_DATA.globalPass = snap.val() !== null ? String(snap.val()).trim() : "5555";
-});
-
-onValue(ref(db, 'isActive'), snap => {
-    if (snap.val() === false || String(snap.val()) === "false") {
-        showLockScreen('SİSTEM KAPATILDI', 'Yönetim paneli sistem yöneticisi tarafından geçici olarak erişime kapatılmıştır. Güvenlik kilidi aktiftir.');
-    }
-});
-
-onValue(ref(db, 'version'), snap => {
-    if (snap.val() && String(snap.val()) !== APP_VERSION) {
-        showLockScreen('GÜNCELLEME GEREKLİ', `Kullandığınız program sürümü (${APP_VERSION}) çok eski. Lütfen güncel sürümü (${snap.val()}) kurunuz.`);
-    }
-});
-
-onValue(ref(db, 'config'), snap => { 
-  window.DB_DATA.config = snap.val() || {}; 
-  applySub(); 
-  if(initialLoadCount < 5) checkInitialLoad(); else if(isLoggedIn && currentTab === 'settings') window.renderSettings(); 
-});
+// ================= FIREBASE BAĞLANTILARI VE VERİ YÖNETİMİ ================= //
+onValue(ref(db, 'adminPass'), snap => { window.DB_DATA.globalPass = snap.val() !== null ? String(snap.val()).trim() : "5555"; });
+onValue(ref(db, 'isActive'), snap => { if (snap.val() === false || String(snap.val()) === "false") { showLockScreen('SİSTEM KAPATILDI', 'Yönetim paneli sistem yöneticisi tarafından geçici olarak erişime kapatılmıştır. Güvenlik kilidi aktiftir.'); } });
+onValue(ref(db, 'version'), snap => { if (snap.val() && String(snap.val()) !== APP_VERSION) { showLockScreen('GÜNCELLEME GEREKLİ', `Kullandığınız program sürümü (${APP_VERSION}) çok eski. Lütfen güncel sürümü (${snap.val()}) kurunuz.`); } });
+onValue(ref(db, 'config'), snap => { window.DB_DATA.config = snap.val() || {}; applySub(); if(initialLoadCount < 5) checkInitialLoad(); else if(isLoggedIn && currentTab === 'settings') window.renderSettings(); });
 
 function checkInitialLoad() {
     initialLoadCount++;
@@ -344,7 +356,6 @@ function checkInitialLoad() {
     }
 }
 
-// BÜYÜK VERİLERİ AYRI DİNLİYORUZ
 onValue(ref(db, 'vehicles'), snap => { const d = snap.val()||{}; window.DB_DATA.vehicles = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 onValue(ref(db, 'users'), snap => { const d = snap.val()||{}; window.DB_DATA.users = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 onValue(ref(db, 'missions'), snap => { const d = snap.val()||{}; window.DB_DATA.missions = Object.keys(d).map(k=>({id:k,...d[k]})); if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
@@ -352,49 +363,10 @@ onValue(ref(db, 'maints'), snap => { const d = snap.val()||{}; window.DB_DATA.ma
 onValue(ref(db, 'purposes'), snap => { window.DB_DATA.purposes = snap.val() || ["Saha Çalışması"]; if(initialLoadCount<5) checkInitialLoad(); else if(isLoggedIn) window.renderCurrent(); });
 
 function showLockScreen(title, message) {
-  const splash = document.getElementById('splash-screen');
-  const login = document.getElementById('admin-login-screen');
-  const appEl = document.getElementById('app');
-  const lock = document.getElementById('system-lock-screen');
-  if(splash) splash.classList.add('hidden');
-  if(login) { login.classList.add('hidden'); login.classList.remove('flex'); }
-  if(appEl) appEl.classList.add('hidden');
+  const splash = document.getElementById('splash-screen'); const login = document.getElementById('admin-login-screen'); const appEl = document.getElementById('app'); const lock = document.getElementById('system-lock-screen');
+  if(splash) splash.classList.add('hidden'); if(login) { login.classList.add('hidden'); login.classList.remove('flex'); } if(appEl) appEl.classList.add('hidden');
   if(lock) { lock.classList.remove('hidden'); lock.classList.add('flex'); document.getElementById('sl-title').innerText = title; document.getElementById('sl-msg').innerText = message; }
 }
-
-
-/* ================= YARDIMCILAR ================= */
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(36)};
-const hashPin=(p,salt)=>H('nmr|'+salt+'|'+p);
-const normPlate=s=>String(s).toUpperCase().replace(/\s+/g,'');
-const fmtPlate=s=>String(s).toUpperCase().trim().replace(/\s+/g,' ');
-const num=v=>Number.isFinite(v)?v:0;
-const nf=n=>num(n).toLocaleString('tr-TR');
-const todayStr=()=>new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-const monthKey=iso=>{const d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
-const idGen=()=>'_'+Math.random().toString(36).slice(2,11)+Date.now().toString(36).slice(-4);
-
-const plateHtml = (p, size = 'md') => {
-    let w = 'w-6', ts = 'text-[8px]', px = 'px-3', py = 'py-1', tSize = 'text-xl';
-    if(size === 'sm') { w = 'w-4'; ts = 'text-[6px]'; px = 'px-2'; py = 'py-0.5'; tSize = 'text-sm'; }
-    if(size === 'lg') { w = 'w-8'; ts = 'text-[10px]'; px = 'px-4'; py = 'py-2'; tSize = 'text-3xl'; }
-    if(size === 'xl') { w = 'w-12'; ts = 'text-xs'; px = 'px-6'; py = 'py-3'; tSize = 'text-5xl'; }
-    return `<div class="inline-flex border-[3px] border-[#111827] rounded-lg overflow-hidden bg-white shadow-md shrink-0">
-        <div class="bg-[#0033A0] ${w} flex items-end justify-center pb-0.5">
-            <span class="text-white font-bold ${ts} leading-none">TR</span>
-        </div>
-        <div class="text-[#111827] font-bold uppercase flex items-center font-[Oswald] ${px} ${py} ${tSize} tracking-widest leading-none">
-            ${esc(p)}
-        </div>
-    </div>`;
-};
-const Utils={dt:s=>{if(!s)return'--';const d=new Date(s);if(isNaN(d))return'--';return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})},d:s=>{if(!s)return'--';const d=new Date(s);return isNaN(d)?'--':d.toLocaleDateString('tr-TR')},plate:plateHtml};
-
-const vehicleById=id=>window.DB_DATA.vehicles.find(v=>v.id===id);
-const userById=id=>window.DB_DATA.users.find(u=>u.id===id);
-const activeMissionOfVehicle=vid=>window.DB_DATA.missions.find(m=>m.vehicleId===vid&&m.status==='active');
-const activeMissionOfUser=uid=>window.DB_DATA.missions.find(m=>m.userId===uid&&m.status==='active');
 
 function maintCfg(){const c=window.DB_DATA.config;return{interval:c.maintInterval||10000,warn:c.maintWarn||1000,months:c.maintMonths===undefined?12:c.maintMonths}}
 
@@ -403,64 +375,6 @@ function updateClock(){
   document.querySelectorAll('.clock').forEach(e => { if(e) e.innerText=t; });
 }
 setInterval(updateClock,30000); updateClock();
-
-/* ================= DASHBOARD ================= */
-function maintStatus(v){
- const c=maintCfg();
- if(v.lastMaintKm===undefined||v.lastMaintKm===null||v.lastMaintKm==='')return{missing:true};
- const nextKm=v.lastMaintKm+c.interval,remain=nextKm-v.km;
- let daysLeft=null;
- if(c.months>0&&v.lastMaintDate){const d=new Date(v.lastMaintDate+'T00:00:00');d.setMonth(d.getMonth()+c.months);daysLeft=Math.ceil((d-new Date())/864e5)}
- const k=remain<0?2:remain<=c.warn?1:0,t=daysLeft===null?0:daysLeft<0?2:daysLeft<=30?1:0;
- const lvl=Math.max(k,t);
- return{nextKm,remain,daysLeft,state:lvl===2?'over':lvl===1?'soon':'ok'};
-}
-
-function maintSummaryHTML(v){
- const s=maintStatus(v);
- if(s.missing)return'<span class="text-gray-400"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Son bakım bilgisi yok.</span>';
- const col=s.state==='over'?'text-red-400':s.state==='soon'?'text-yellow-400':'text-green-400';
- return`<div class="grid sm:grid-cols-3 gap-5"><div><div class="text-[10px] text-yellow-500 uppercase font-bold tracking-widest mb-1">Kayıtlı Son Bakım</div><b class="text-white text-lg">${nf(v.lastMaintKm)} KM</b><div class="text-xs text-textmuted mt-1">${v.lastMaintDate?Utils.d(v.lastMaintDate+'T12:00:00'):'tarih yok'}</div></div><div><div class="text-[10px] text-yellow-500 uppercase font-bold tracking-widest mb-1">Gelecek Bakım</div><b class="text-white text-lg">${nf(s.nextKm)} KM</b></div><div><div class="text-[10px] text-yellow-500 uppercase font-bold tracking-widest mb-1">Kalan Durum</div><b class="text-lg ${col}">${s.remain<0?nf(-s.remain)+' KM gecikti':nf(s.remain)+' KM kaldı'}${s.daysLeft!==null?(s.daysLeft<0?' · Süre doldu':' · '+s.daysLeft+' gün'):''}</b></div></div>`;
-}
-
-function donut(items){
- const tot=items.reduce((s,i)=>s+i.v,0);
- if(!tot)return'<div class="text-center text-textmuted text-sm py-12">Bu ay görev kaydı yok.</div>';
- const PAL=['#3b82f6','#22c55e','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899'];
- const C=2*Math.PI*54;let acc=0;
- const segs=items.map((it,i)=>{const len=C*it.v/tot;const s=`<circle r="54" cx="70" cy="70" fill="none" stroke="${PAL[i%PAL.length]}" stroke-width="18" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-acc}" transform="rotate(-90 70 70)"/>`;acc+=len;return s}).join('');
- const leg=items.map((it,i)=>`<div class="flex items-center justify-between text-xs gap-2"><span class="flex items-center gap-2 min-w-0"><span class="w-3 h-3 rounded-full shrink-0" style="background:${PAL[i%PAL.length]}"></span><span class="truncate text-white font-bold">${esc(it.l)}</span></span><b class="text-gray-400">${it.v}</b></div>`).join('');
- return`<div class="flex flex-col items-center gap-6"><svg viewBox="0 0 140 140" class="w-48 h-48 drop-shadow-lg"><circle r="54" cx="70" cy="70" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="18"/>${segs}<text x="70" y="68" text-anchor="middle" fill="#fff" font-size="28" font-weight="900">${tot}</text><text x="70" y="88" text-anchor="middle" fill="#93a0c4" font-size="10" font-weight="700" letter-spacing="1">GÖREV</text></svg><div class="w-full space-y-2 bg-black/20 p-4 rounded-xl">${leg}</div></div>`;
-}
-
-function lineChart(pts){
- const W=360,Hh=210,pl=14,pr=14,pt=28,pb=30,max=Math.max(1,...pts.map(p=>p.v));
- if(pts.every(p=>p.v===0))return'<div class="text-center text-textmuted text-sm py-12">Henüz KM verisi yok.</div>';
- const step=(W-pl-pr)/(pts.length-1||1);
- const xy=pts.map((p,i)=>[+(pl+i*step).toFixed(1),+(pt+(Hh-pt-pb)*(1-p.v/max)).toFixed(1)]);
- const line=xy.map(p=>p.join(',')).join(' ');
- const area=`${pl},${Hh-pb} ${line} ${xy[xy.length-1][0]},${Hh-pb}`;
- const grid=[0,1,2,3].map(i=>{const y=pt+(Hh-pt-pb)*i/3;return`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)" stroke-dasharray="4 4"/>`}).join('');
- const dots=xy.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#0f152e" stroke="#22c55e" stroke-width="3"/><text x="${p[0]}" y="${p[1]-12}" text-anchor="middle" fill="#fff" font-size="11" font-weight="800">${pts[i].v?nf(pts[i].v):''}</text><text x="${p[0]}" y="${Hh-6}" text-anchor="middle" fill="#93a0c4" font-size="11" font-weight="700">${esc(pts[i].l)}</text>`).join('');
- return`<svg viewBox="0 0 ${W} ${Hh}" class="w-full drop-shadow-md"><defs><linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22c55e" stop-opacity=".4"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></linearGradient></defs>${grid}<polygon points="${area}" fill="url(#lg2)"/><polyline points="${line}" fill="none" stroke="#22c55e" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
-}
-
-function alertCard(color,icon,title,plateHtml,extra,btn){
- return `
- <div class="bg-${color}/10 border-l-4 border-${color} p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-${color}/20 transition">
-    <div class="flex-1 min-w-0 w-full">
-        <div class="flex items-center gap-2 mb-2">
-            <i class="fa-solid ${icon} text-${color} text-lg"></i>
-            <span class="font-extrabold text-sm text-${color} uppercase tracking-wider">${title}</span>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-            ${plateHtml}
-            <span class="text-sm font-bold text-gray-200">${extra}</span>
-        </div>
-    </div>
-    <div class="w-full sm:w-auto mt-1">${btn||''}</div>
- </div>`;
-}
 
 window.renderDashboard=function(){
  const vehicles = window.DB_DATA.vehicles.filter(v=>!v.isDeleted), missions = window.DB_DATA.missions, users = window.DB_DATA.users;
@@ -564,25 +478,7 @@ window.renderUsers=function(){
   return `<tr class="hover:bg-white/5 border-b border-white/5 transition"><td class="font-extrabold text-white text-base py-4"><i class="fa-solid fa-user-tie text-blue-400 mr-3"></i>${esc(u.name)}</td><td class="text-sm text-gray-300 font-bold">${esc(u.sicil||'---')} <span class="text-textmuted font-normal mx-2">/</span> ${esc(u.phone||'---')}</td><td class="font-black text-primary text-lg text-center bg-blue-900/10">${esc(u.licenseClass||'-')}</td><td class="text-center">${s}</td><td class="text-center"><button onclick="window.openUserForm('${u.id}')" class="text-yellow-400 hover:text-white bg-yellow-500/10 hover:bg-yellow-500/30 transition p-3 rounded-xl mr-3" title="Düzenle"><i class="fa-solid fa-pen text-lg"></i></button><button onclick="window.deleteUser('${u.id}')" class="text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/30 transition p-3 rounded-xl" title="Sistemden Sil"><i class="fa-solid fa-trash text-lg"></i></button></td></tr>`}).join('')||'<tr><td colspan="5" class="text-center py-12 text-textmuted bg-black/20 rounded-2xl">Sistemde kayıtlı personel bulunamadı.</td></tr>';
 };
 
-window.initRecords=function(){
- const v=document.getElementById('rec-veh'),u=document.getElementById('rec-usr');
- if(!v || !u) return;
- const pv=v.value,pu=u.value;
- v.innerHTML='<option value="">Tüm Araçlar</option>'+window.DB_DATA.vehicles.map(x=>`<option value="${esc(x.id)}">${esc(x.plate)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
- u.innerHTML='<option value="">Tüm Personel</option>'+window.DB_DATA.users.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.isDeleted?' (Silinmiş)':''}</option>`).join('');
- v.value=pv;u.value=pu; window.renderRecords();
-};
-
-window.getFilteredRecords = function() {
- const vid=document.getElementById('rec-veh').value,uid=document.getElementById('rec-usr').value,mo=document.getElementById('rec-month').value;
- let ms=window.DB_DATA.missions;
- if(vid)ms=ms.filter(m=>m.vehicleId===vid);if(uid)ms=ms.filter(m=>m.userId===uid);if(mo)ms=ms.filter(m=>monthKey(m.startTime)===mo);
- return vid?ms.sort((a,b)=>b.startKm-a.startKm):ms.sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
-};
-
 window.renderRecords=function(){
- const elVeh = document.getElementById('rec-veh'), elUsr = document.getElementById('rec-usr'), elMon = document.getElementById('rec-month');
- if(!elVeh || !elUsr || !elMon) return;
  const ms=window.getFilteredRecords();
  const vs=window.DB_DATA.vehicles,us=window.DB_DATA.users;
  const elTab = document.getElementById('records-table');
@@ -608,8 +504,7 @@ window.renderSettings=function(){
 
 function applySub(){const s=window.DB_DATA.config.sub||'Numarataj Şube Müdürlüğü';document.querySelectorAll('#hdr-org').forEach(e=>e.innerText=s)}
 
-
-/* ================= DİNLEYİCİLER ================= */
+/* ================= FORM DİNLEYİCİLERİ ================= */
 listen('form-admin-login', 'submit', (e) => {
     e.preventDefault();
     const pw = document.getElementById('al-pw').value.trim();
