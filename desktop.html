@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AYS | Numarataj Araç Filo</title>
 
-<!-- Tasarım Kodları (CDN) -->
+<!-- Tasarım ve Excel Kodları (CDN) -->
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> <!-- EXCEL İÇİN EKLENDİ -->
 
 <script>
 tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',success:'#22c55e',mission:'#38bdf8',warning:'#f59e0b',danger:'#ef4444'},fontFamily:{sans:['Inter','sans-serif']}}}}
@@ -16,8 +17,7 @@ tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',su
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&display=swap');
-html, body { height: 100%; overflow: hidden; background-color: transparent; } /* Transparent for rounded corners */
-/* app-wrapper yuvarlak köşeleri kontrol eder */
+html, body { height: 100%; overflow: hidden; background-color: transparent; }
 .app-wrapper { background-color: #0a0f1f; background-image: radial-gradient(circle at 0 0, rgba(29,63,168,0.30), transparent 45%), radial-gradient(circle at 100% 0, rgba(91,33,182,0.28), transparent 45%); border-radius: 20px; height: 100vh; border: 1px solid rgba(255,255,255,0.15); overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.8); font-family: 'Inter', sans-serif; color: #e8ecf8; display: flex; flex-direction: column; }
 .drag-area { -webkit-app-region: drag; user-select: none; }
 .no-drag { -webkit-app-region: no-drag; }
@@ -186,7 +186,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
      <!-- KAYITLAR -->
      <div id="admin-records" class="hidden h-full flex-col w-full">
-      <div class="glass p-6 mb-5 shrink-0"><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end"><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Araç</label><select id="rec-veh" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Personel</label><select id="rec-usr" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Ay</label><input type="month" id="rec-month" class="w-full p-3.5"></div><div class="flex gap-3"><button onclick="window.renderRecords()" class="btn-3d btn-blue flex-1 py-3.5"><i class="fa-solid fa-filter mr-2"></i>Filtrele</button><button onclick="window.exportCSV()" class="btn-3d btn-green flex-1 py-3.5"><i class="fa-solid fa-file-excel mr-2"></i>CSV</button></div></div></div>
+      <div class="glass p-6 mb-5 shrink-0"><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end"><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Araç</label><select id="rec-veh" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Personel</label><select id="rec-usr" class="w-full p-3.5"></select></div><div><label class="block text-xs font-bold text-textmuted mb-2 uppercase">Ay</label><input type="month" id="rec-month" class="w-full p-3.5"></div><div class="flex gap-3"><button onclick="window.renderRecords()" class="btn-3d btn-blue flex-1 py-3.5"><i class="fa-solid fa-filter mr-2"></i>Filtrele</button><button onclick="window.exportExcel()" class="btn-3d btn-green flex-1 py-3.5"><i class="fa-solid fa-file-excel mr-2"></i>Excel İndir</button></div></div></div>
       <div class="glass flex-1 min-h-0 flex flex-col"><div class="tbl-wrap flex-1"><table class="text-left min-w-[1000px] w-full"><thead><tr><th>Durum</th><th>Sürücü</th><th>Plaka</th><th>Güzergah & Not</th><th>Çıkış</th><th>Dönüş</th><th>Fark</th><th class="text-center">İşlem</th></tr></thead><tbody id="records-table" class="text-sm"></tbody></table></div></div>
      </div>
 
@@ -214,8 +214,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 </div>
 
-<!-- ================= YÖNETİCİ MODALLARI ================= -->
-<div id="modal-overlay" class="fixed inset-0 bg-[#030612]/90 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 overflow-y-auto no-drag">
+<!-- ================= YÖNETİCİ MODALLARI (FLU ARKAPLAN) ================= -->
+<div id="modal-overlay" class="fixed inset-0 bg-[#0a0f1f]/50 backdrop-blur-md z-[500] hidden opacity-0 transition-opacity duration-300 items-center justify-center p-4 overflow-y-auto no-drag">
  
  <!-- ONAY PENCERESİ -->
  <div id="modal-confirm" class="glass-modal w-full max-w-sm hidden flex-col pop-in">
@@ -233,14 +233,15 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   </div>
  </div>
 
- <!-- ARAÇ KARTI -->
+ <!-- ARAÇ KARTI (ÜST ÜSTE BİNME KAYMASI DÜZELTİLDİ) -->
  <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
   <div class="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
-   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-    <div id="vd-plate-box" class="shrink-0 scale-110 origin-left"></div>
-    <div class="flex flex-col gap-1 min-w-0">
+   <!-- Flex yapısı esnetildi ve shrink-0 atandı -->
+   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+    <div id="vd-plate-box" class="shrink-0" style="transform: scale(1.1); transform-origin: left center; margin-right: 15px;"></div>
+    <div class="flex flex-col gap-2 min-w-0 flex-1">
      <h3 id="vd-model" class="font-extrabold text-2xl text-white truncate break-words"></h3>
-     <div id="vd-status" class="mt-1 flex flex-wrap"></div>
+     <div id="vd-status" class="flex flex-wrap gap-2 mt-1"></div>
     </div>
    </div>
    <button class="modal-close w-10 h-10 shrink-0 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition ml-4"><i class="fa-solid fa-xmark text-xl text-textmuted"></i></button>
@@ -261,7 +262,10 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
      <div class="glass p-5 flex flex-col items-center justify-center text-center"><p class="text-[11px] text-textmuted uppercase font-bold tracking-widest">Muayene</p><p id="vdi-ins" class="font-bold text-sm mt-2 text-white"></p></div>
     </div>
     <div class="glass p-6 md:p-8 border-l-4 border-l-yellow-500 bg-yellow-500/5">
-     <div class="flex justify-between items-center mb-6"><h4 class="text-sm font-extrabold text-yellow-500 uppercase tracking-widest"><i class="fa-solid fa-oil-can mr-2"></i>Bakım Durumu</h4><div class="flex gap-3"><button id="vdi-btn-maint" class="btn-3d btn-yellow px-4 py-2.5 text-xs"><i class="fa-solid fa-wrench mr-2"></i>Bakım İşle</button><button id="vdi-btn-insp" class="btn-3d btn-green px-4 py-2.5 text-xs"><i class="fa-solid fa-calendar-check mr-2"></i>Muayene Yenile</button></div></div>
+     <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+      <h4 class="text-sm font-extrabold text-yellow-500 uppercase tracking-widest"><i class="fa-solid fa-oil-can mr-2"></i>Bakım Durumu</h4>
+      <div class="flex flex-wrap gap-3"><button id="vdi-btn-maint" class="btn-3d btn-yellow px-4 py-2.5 text-xs"><i class="fa-solid fa-wrench mr-2"></i>Bakım İşle</button><button id="vdi-btn-insp" class="btn-3d btn-green px-4 py-2.5 text-xs"><i class="fa-solid fa-calendar-check mr-2"></i>Muayene Yenile</button></div>
+     </div>
      <div id="vdi-maint" class="text-sm bg-black/40 p-5 rounded-2xl"></div>
     </div>
     <div class="glass p-6 border-l-4 border-l-warning"><h4 class="text-xs font-bold text-warning uppercase mb-3"><i class="fa-solid fa-bullhorn mr-2"></i>Yönetici Notu</h4><p id="vdi-notes" class="text-white text-sm bg-black/30 p-4 rounded-xl border border-white/5"></p></div>
@@ -275,7 +279,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 
  <div id="modal-vehicle-form" class="glass-modal w-full max-w-3xl hidden flex-col max-h-[90vh]">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 id="vf-title" class="text-xl font-extrabold text-white">Araç</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
@@ -304,7 +308,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-user-form" class="glass-modal w-full max-w-md hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 id="uf-title" class="text-xl font-extrabold text-white">Personel</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
@@ -319,7 +323,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-resolve-note" class="glass-modal w-full max-w-md hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 class="text-xl font-extrabold text-white">Şikayet Giderme Raporu</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
@@ -327,7 +331,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-maint" class="glass-modal w-full max-w-md hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 class="text-xl font-extrabold text-white">Bakım İşle</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
@@ -335,7 +339,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-insp" class="glass-modal w-full max-w-sm hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 class="text-xl font-extrabold text-white">Muayene Yenile</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
@@ -343,26 +347,41 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
  
  <div id="modal-manual-mission" class="glass-modal w-full max-w-2xl hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 class="text-xl font-extrabold text-white">Elle Geçmiş Kayıt Gir</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
   <form id="form-manual-mission" class="p-8"><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-user" class="p-4 w-full" required></select><select id="mm-vehicle" class="p-4 w-full" onchange="window.updateManualVehicleKm()" required></select></div><div class="grid grid-cols-2 gap-5 mb-5"><input type="datetime-local" id="mm-start-time" class="p-4 w-full" required><input type="datetime-local" id="mm-end-time" class="p-4 w-full" required><input type="number" id="mm-start-km" class="p-4 w-full" placeholder="Çıkış KM" required><input type="number" id="mm-end-km" class="p-4 w-full" placeholder="Dönüş KM" required></div><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-purpose" class="p-4 w-full" required></select><input type="text" id="mm-dest" class="p-4 w-full" placeholder="Güzergah" required></div><input type="text" id="mm-note" class="w-full p-4 mb-5" placeholder="Görev Notu / Şikayet"><button type="submit" class="btn-3d btn-yellow w-full py-5">Kaydı Tamamla</button></form>
  </div>
  
- <div id="modal-record-edit" class="glass-modal w-full max-w-sm hidden flex-col">
-  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px]">
+ <!-- YENİ GÜNCELLENMİŞ VE GENİŞLETİLMİŞ GÖREV DÜZENLEME FORMU -->
+ <div id="modal-record-edit" class="glass-modal w-full max-w-2xl hidden flex-col">
+  <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 id="rf-title" class="text-xl font-extrabold text-white">Kayıt Düzenle</h3>
       <button class="modal-close text-textmuted hover:text-white transition"><i class="fa-solid fa-xmark text-2xl"></i></button>
   </div>
-  <form id="form-record" class="p-8"><input type="hidden" id="rf-id"><input type="hidden" id="rf-mode">
-   <!-- JS çökmesini önleyen ID'ler geri eklendi -->
+  <form id="form-record" class="p-8 space-y-5">
+   <input type="hidden" id="rf-id"><input type="hidden" id="rf-mode">
    <p id="rf-info" class="text-xs text-textmuted mb-4 bg-black/30 p-3 rounded-lg leading-relaxed"></p>
-   <input type="number" id="rf-skm" class="w-full p-4 mb-4 font-black" required><input type="number" id="rf-ekm" class="w-full p-4 mb-4 font-black" required><button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-5 font-bold">Güncelle</button></form>
+   <div class="grid sm:grid-cols-2 gap-4">
+       <div><label class="block text-xs font-bold text-textmuted mb-1 uppercase">Personel</label><select id="rf-usr" class="w-full p-3"></select></div>
+       <div><label class="block text-xs font-bold text-textmuted mb-1 uppercase">Araç</label><select id="rf-veh" class="w-full p-3"></select></div>
+   </div>
+   <div class="grid grid-cols-2 gap-4">
+       <div><label class="block text-xs font-bold text-textmuted mb-1 uppercase">Çıkış Zamanı</label><input type="datetime-local" id="rf-st" class="w-full p-3"></div>
+       <div><label class="block text-xs font-bold text-textmuted mb-1 uppercase">Dönüş Zamanı</label><input type="datetime-local" id="rf-en" class="w-full p-3"></div>
+   </div>
+   <div class="grid grid-cols-2 gap-4">
+       <div><label class="text-xs font-bold text-blue-400 uppercase block mb-1">Çıkış KM</label><input type="number" min="0" id="rf-skm" class="w-full p-3 font-black text-center" required></div>
+       <div><label class="text-xs font-bold text-green-400 uppercase block mb-1">Dönüş KM</label><input type="number" min="0" id="rf-ekm" class="w-full p-3 font-black text-center" required></div>
+   </div>
+   <button type="submit" id="rf-btn" class="btn-3d btn-yellow w-full py-4 text-lg font-bold tracking-wide mt-2">Güncelle</button>
+  </form>
  </div>
 
 </div>
 </div>
+
 <!-- A4 ÇIKTI -->
 <div id="print-qr-wrapper" class="hidden">
  <div style="font-family:Inter,sans-serif;text-align:center;border:8px solid #1e3a8a;padding:60px 40px;border-radius:30px;width:85%;background:#fff">
@@ -374,7 +393,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  </div>
 </div>
 
-<!-- SCRIPTS -->
 <script type="module" src="script.js"></script>
 </body>
 </html>
