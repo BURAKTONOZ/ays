@@ -9,7 +9,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
+<!-- EXCEL KÜTÜPHANESİ DÜZELTİLDİ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',success:'#22c55e',mission:'#38bdf8',warning:'#f59e0b',danger:'#ef4444'},fontFamily:{sans:['Inter','sans-serif']}}}}
@@ -232,12 +233,12 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   </div>
  </div>
 
- <!-- ARAÇ KARTI EKRANI (ÜST ÜSTE BİNME KAYMASI DÜZELTİLDİ) -->
+ <!-- ARAÇ KARTI EKRANI -->
  <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
   <div class="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
-   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5 w-full">
-    <div id="vd-plate-box" class="shrink-0"></div> <!-- Plaka tasarımı artık CSS içinden orijinal boyutuyla geliyor -->
-    <div class="flex flex-col gap-1 min-w-0 flex-1">
+   <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+    <div id="vd-plate-box" class="shrink-0" style="transform: scale(1.1); transform-origin: left center; margin-right: 15px;"></div>
+    <div class="flex flex-col gap-2 min-w-0 flex-1">
      <h3 id="vd-model" class="font-extrabold text-2xl text-white truncate break-words"></h3>
      <div id="vd-status" class="flex flex-wrap gap-2 mt-1"></div>
     </div>
@@ -352,7 +353,6 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
   <form id="form-manual-mission" class="p-8"><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-user" class="p-4 w-full" required></select><select id="mm-vehicle" class="p-4 w-full" onchange="window.updateManualVehicleKm()" required></select></div><div class="grid grid-cols-2 gap-5 mb-5"><input type="datetime-local" id="mm-start-time" class="p-4 w-full" required><input type="datetime-local" id="mm-end-time" class="p-4 w-full" required><input type="number" id="mm-start-km" class="p-4 w-full" placeholder="Çıkış KM" required><input type="number" id="mm-end-km" class="p-4 w-full" placeholder="Dönüş KM" required></div><div class="grid sm:grid-cols-2 gap-5 mb-5"><select id="mm-purpose" class="p-4 w-full" required></select><input type="text" id="mm-dest" class="p-4 w-full" placeholder="Güzergah" required></div><input type="text" id="mm-note" class="w-full p-4 mb-5" placeholder="Görev Notu / Şikayet"><button type="submit" class="btn-3d btn-yellow w-full py-5">Kaydı Tamamla</button></form>
  </div>
  
- <!-- YENİ GÜNCELLENMİŞ VE GENİŞLETİLMİŞ GÖREV DÜZENLEME FORMU -->
  <div id="modal-record-edit" class="glass-modal w-full max-w-2xl hidden flex-col">
   <div class="flex justify-between items-center p-6 border-b border-white/10 bg-[#0f152e] rounded-t-[20px] shrink-0">
       <h3 id="rf-title" class="text-xl font-extrabold text-white">Kayıt Düzenle</h3>
@@ -379,8 +379,8 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
 </div>
 
-<!-- A4 ÇIKTI / PDF BASKI EKRANI -->
-<div id="print-qr-wrapper">
+<!-- A4 ÇIKTI -->
+<div id="print-qr-wrapper" class="hidden">
  <div style="font-family:Inter,sans-serif;text-align:center;border:8px solid #1e3a8a;padding:60px 40px;border-radius:30px;width:85%;background:#fff">
   <h1 id="pr-org" style="font-size:30px;font-weight:900;color:#0f172a;margin:0"></h1>
   <h2 id="pr-sub" style="font-size:22px;font-weight:700;color:#334155;margin:10px 0 30px"></h2>
