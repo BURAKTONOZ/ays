@@ -9,7 +9,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 tailwind.config={theme:{extend:{colors:{textmuted:'#93a0c4',primary:'#3b82f6',success:'#22c55e',mission:'#38bdf8',warning:'#f59e0b',danger:'#ef4444'},fontFamily:{sans:['Inter','sans-serif']}}}}
@@ -244,7 +243,7 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
  <div id="modal-vehicle-detail" class="glass-modal w-full max-w-5xl hidden flex-col h-[90vh]">
   <div class="flex justify-between items-start p-6 border-b border-white/10 shrink-0 bg-[#0f152e] rounded-t-[20px]">
    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-    <div id="vd-plate-box" class="shrink-0" style="transform: scale(1.1); transform-origin: left center; margin-right: 15px;"></div>
+    <div id="vd-plate-box" class="shrink-0 mr-2"></div>
     <div class="flex flex-col gap-2 min-w-0 flex-1">
      <h3 id="vd-model" class="font-extrabold text-2xl text-white truncate break-words"></h3>
      <div id="vd-status" class="flex flex-wrap gap-2 mt-1"></div>
