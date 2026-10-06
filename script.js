@@ -1,6 +1,5 @@
-const { initializeApp } = require("firebase/app");
-const { getDatabase, ref, onValue, update, set, remove } = require("firebase/database");
-const { ipcRenderer } = require("electron");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 // ================= 1. TEMEL AYARLAR VE GLOBAL DEĞİŞKENLER ================= //
 const APP_VERSION = "1.0.0";
@@ -24,9 +23,12 @@ let closeTimeout = null;
 let returnToDetail = null;
 
 // ================= 2. ELECTRON KÖPRÜSÜ (Üst Bar Butonları) ================= //
-document.getElementById('win-min')?.addEventListener('click', () => ipcRenderer.send('window-minimize'));
-document.getElementById('win-max')?.addEventListener('click', () => ipcRenderer.send('window-maximize'));
-document.getElementById('win-close')?.addEventListener('click', () => ipcRenderer.send('window-close'));
+if (window.require) {
+    const ipcRenderer = window.require('electron').ipcRenderer;
+    document.getElementById('win-min')?.addEventListener('click', () => ipcRenderer.send('window-minimize'));
+    document.getElementById('win-max')?.addEventListener('click', () => ipcRenderer.send('window-maximize'));
+    document.getElementById('win-close')?.addEventListener('click', () => ipcRenderer.send('window-close'));
+}
 
 // ================= 2.5 VERİTABANI DİNLEYİCİSİ (ANA DÖNGÜ VE KONTROLLER) ================= //
 const dbRef = ref(db);
@@ -62,7 +64,6 @@ onValue(dbRef, (snapshot) => {
         return; 
     }
     
-    // Kontrollerden geçildiyse kilit ekranını gizle (canlı olarak tekrar açıldıysa düzeltir)
     if (lockScreen) {
         lockScreen.classList.add('hidden');
         lockScreen.classList.remove('flex');
